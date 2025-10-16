@@ -4,6 +4,7 @@ import { selectPlayerById } from '../redux/slices/playersSlice';
 import { selectPlayerSessions } from '../redux/slices/sessionsSlice';
 import { uploadSession } from '../redux/slices/sessionsSlice';
 import { removeWarning } from '../redux/slices/playersSlice';
+import { checkWeeklyCompliance } from '../redux/thunks/checkWeeklyCompliance';
 import { useState } from 'react';
 
 function Profile() {
@@ -17,7 +18,7 @@ function Profile() {
         const result = dispatch(
             uploadSession({
                 playerId: currentUser.id,
-                photo: 'https://via.placeholder.com/150?text=Recovery',
+                photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%234F46E5"/%3E%3Ctext x="50%25" y="50%25" font-size="80" text-anchor="middle" dy=".3em" fill="white"%3E💪%3C/text%3E%3C/svg%3E',
                 result: 'Ejercicio de Recuperación',
                 date: new Date().toISOString(),
                 isRecovery: true,
@@ -29,6 +30,22 @@ function Profile() {
             setShowRecovery(false);
             alert('✅ ¡Ejercicio de recuperación completado! Se ha eliminado una amonestación.');
         }
+    };
+
+    const handleWeeklyCheck = () => {
+        const results = dispatch(checkWeeklyCompliance());
+
+        const message = `
+📊 Verificación Semanal Completada
+
+✅ Jugadores OK: ${results.compliant}
+⚠️ Amonestaciones: ${results.warnings}
+👥 Total verificados: ${results.checked}
+
+Detalles en consola del navegador
+        `.trim();
+
+        alert(message);
     };
 
     return (
@@ -90,23 +107,29 @@ function Profile() {
                     </div>
                 )}
 
-                {/* BOTÓN DE PRUEBA - Solo para desarrollo */}
+                {/* VERIFICACIÓN SEMANAL - Mejorado */}
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-                    <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                        🧪 Testing: Verificación Semanal
-                    </h3>
-                    <button
-                        onClick={() => {
-                            dispatch({ type: 'sessions/checkWeeklyCompliance' });
-                            alert('Verificación ejecutada! Revisa la consola para ver los resultados.');
-                        }}
-                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 font-semibold"
-                    >
-                        ▶️ Ejecutar Verificación Semanal
-                    </button>
-                    <p className="text-sm text-blue-700 mt-2">
-                        Esto verifica si todos completaron 3 días la semana pasada
-                    </p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-blue-800 mb-1">
+                                🔍 Verificación Semanal
+                            </h3>
+                            <p className="text-sm text-blue-700">
+                                Verifica si todos completaron 3 días la semana pasada y asigna amonestaciones
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleWeeklyCheck}
+                            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 font-semibold transition-colors"
+                        >
+                            ▶️ Ejecutar Ahora
+                        </button>
+                    </div>
+                    <div className="mt-3 bg-blue-100 rounded p-3">
+                        <p className="text-xs text-blue-800">
+                            <strong>Nota:</strong> En producción, esto se ejecutará automáticamente cada lunes mediante un cron job en el servidor.
+                        </p>
+                    </div>
                 </div>
 
                 {/* Modal de Recuperación */}

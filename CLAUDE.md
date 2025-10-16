@@ -24,7 +24,7 @@ FitTracker es una aplicación web que permite a usuarios/jugadores:
 
 ---
 
-## 🏗️ Arquitectura
+## 🗂️ Arquitectura
 
 ```
 fitness-tracker/
@@ -46,8 +46,8 @@ fitness-tracker/
 │   │   │   ├── authSlice.js          # Autenticación simple
 │   │   │   ├── playersSlice.js       # Gestión de jugadores y warnings
 │   │   │   └── sessionsSlice.js      # Gestión de sesiones con validaciones
-│   │   └── middleware/
-│   │       └── warningMiddleware.js   # Verificación semanal (manual)
+│   │   └── thunks/
+│   │       └── checkWeeklyCompliance.js  # Verificación semanal (NEW!)
 │   ├── utils/
 │   │   └── dateHelpers.js            # Funciones de fechas y semanas
 │   ├── App.jsx                        # Navegación principal
@@ -57,6 +57,8 @@ fitness-tracker/
 ├── vite.config.js
 └── package.json
 ```
+
+**⚠️ NOTA:** El archivo `middleware/warningMiddleware.js` ha sido **deprecado** y reemplazado por el thunk `checkWeeklyCompliance.js`
 
 ---
 
@@ -90,6 +92,20 @@ Usuario → Componente → dispatch(action) → Thunk/Reducer → Estado actuali
 1. Verificar que no haya sesión el mismo día (isSameDay)
 2. Verificar que no tenga más de 3 días diferentes esta semana (getUniqueDaysInWeek)
 3. Si pasa validaciones → addSession + updatePlayerStats
+
+### Verificación Semanal (Thunk)
+**NUEVO:** La verificación de cumplimiento semanal ahora se hace mediante un **thunk manual**:
+- **Archivo:** `src/redux/thunks/checkWeeklyCompliance.js`
+- **Función:** `checkWeeklyCompliance()`
+- **Ejecución:** Manual desde Profile.jsx (botón "Ejecutar Verificación Semanal")
+- **Retorno:** Objeto con estadísticas de verificación
+- **Futuro:** Se migrará a un cron job en backend cuando vaya a producción
+
+```javascript
+// Ejemplo de uso:
+const results = dispatch(checkWeeklyCompliance());
+// results = { checked: 3, warnings: 1, compliant: 2, details: [...] }
+```
 
 ---
 
@@ -159,10 +175,10 @@ npm uninstall [package] # Desinstalar paquete
 
 ---
 
-## 🐛 Problemas Conocidos / Limitaciones
+## 🛠 Problemas Conocidos / Limitaciones
 
 ### Actuales
-- [ ] Middleware de warnings NO se ejecuta automáticamente (requiere dispatch manual)
+- [ ] Verificación de warnings requiere ejecución manual (por diseño en frontend)
 - [ ] No hay validación de fechas futuras
 - [ ] No hay sistema de notificaciones
 - [ ] Fotos son URLs (no upload real)
@@ -173,30 +189,34 @@ npm uninstall [package] # Desinstalar paquete
 - ✅ Persistencia con localStorage funciona
 - ✅ Leaderboard ordena correctamente
 - ✅ Sistema de recuperación funciona
+- ✅ Verificación semanal manual funciona correctamente
 
 ---
 
 ## 🎯 Posibles Mejoras Futuras
 
 ### Corto Plazo
-- [ ] Botón para ejecutar verificación semanal
 - [ ] Validación de fechas futuras
 - [ ] Confirmación antes de eliminar datos
 - [ ] Dark mode
+- [ ] Exportar estadísticas a CSV/PDF
 
 ### Medio Plazo
 - [ ] Upload real de imágenes (Cloudinary/AWS S3)
 - [ ] Sistema de notificaciones (toast)
 - [ ] Gráficas de progreso (Chart.js/Recharts)
 - [ ] Filtros en leaderboard
+- [ ] Historial de amonestaciones
 
 ### Largo Plazo (Requiere Backend)
 - [ ] Backend con Node.js + Express
 - [ ] Base de datos (PostgreSQL/MongoDB)
 - [ ] Autenticación real (JWT)
-- [ ] Cron jobs para verificaciones automáticas
+- [ ] **Cron jobs para verificaciones automáticas** ⭐
 - [ ] API REST/GraphQL
 - [ ] Notificaciones push
+- [ ] Sistema de roles (admin/user)
+- [ ] Emails automáticos
 
 ---
 
@@ -208,12 +228,14 @@ npm uninstall [package] # Desinstalar paquete
 - Mantener consistencia con estructura actual
 - Usar Tailwind (NO CSS modules ni styled-components)
 - Comentar lógica compleja
+- Preferir thunks sobre middlewares para lógica de negocio
 
 ### Al Modificar Redux
 - Actualizar selectors si cambias estructura de estado
 - Considerar impacto en localStorage
 - Mantener normalización (byId + allIds)
 - Thunks para lógica compleja, reducers para cambios simples
+- **NO usar middlewares para lógica de negocio** - usar thunks
 
 ### Al Crear Componentes
 - Props tipadas con destructuring
@@ -221,7 +243,7 @@ npm uninstall [package] # Desinstalar paquete
 - Responsive design con Tailwind
 - Accessibility: labels, alt texts, semantic HTML
 
-### Al Debugear
+### Al Debuggear
 - Usar Redux DevTools para ver estado y acciones
 - console.log en thunks para seguir flujo
 - Verificar localStorage en DevTools → Application
@@ -237,13 +259,16 @@ npm uninstall [package] # Desinstalar paquete
 3. Intentar subir otra el mismo día → Debe dar error
 4. Subir en 3 días diferentes
 5. Intentar subir una 4ta → Debe dar error
-6. Ir a Profile → Ejecutar recuperación (si hay warnings)
-7. Ver leaderboard → Verificar orden correcto
+6. Ir a Profile → Ejecutar verificación semanal manual
+7. Verificar amonestaciones en consola
+8. Hacer ejercicio de recuperación (si hay warnings)
+9. Ver leaderboard → Verificar orden correcto
 
 ### Casos Edge
 - ¿Qué pasa si localStorage está corrupto?
 - ¿Qué pasa si no hay sesiones?
 - ¿Qué pasa si es semana 53 del año?
+- ¿Qué pasa si ejecutas verificación múltiples veces?
 
 ---
 
@@ -260,6 +285,7 @@ npm uninstall [package] # Desinstalar paquete
 - Redux Ducks Pattern (actions + reducers en slices)
 - Selector Pattern para leer estado
 - Thunk Pattern para async/validaciones
+- **Thunks para lógica de negocio** (NO middlewares)
 
 ---
 
@@ -277,6 +303,7 @@ Comportamiento actual: [qué está pasando]
 ### Preguntas Efectivas
 ✅ "En sessionsSlice.js, ¿cómo puedo añadir validación para fechas futuras?"
 ✅ "Quiero añadir un filtro por mes en LeaderboardPage, ¿dónde debería ir esa lógica?"
+✅ "¿Cómo puedo exportar las estadísticas a CSV?"
 ❌ "No funciona" (muy vago)
 ❌ "Arregla mi código" (sin contexto)
 
@@ -296,14 +323,29 @@ Por favor modifica [archivo] para [objetivo]:
 - **Prioridad**: Claridad sobre optimización
 - **Testing**: Manual por ahora, sin tests automatizados
 - **Backend**: Pendiente - Por ahora todo en frontend
+- **Verificación semanal**: Manual mediante thunk (futuro: cron job en backend)
 
 ---
 
-## 🔄 Última Actualización
+## 🔄 Changelog Reciente
 
-**Fecha:** 2025-10-10
+### 2025-10-14
+- ✅ **CAMBIO IMPORTANTE:** Eliminado `warningMiddleware.js`
+- ✅ Creado `checkWeeklyCompliance.js` thunk para verificación semanal
+- ✅ Actualizado `Profile.jsx` con botón de verificación mejorado
+- ✅ Simplificado `store.js` (sin middleware custom)
+- ✅ Documentada estrategia de migración a backend + cron job
+
+**Razón del cambio:** Los middlewares no son apropiados para lógica de negocio que requiere trigger manual. Los thunks son más explícitos y fáciles de debuggear.
+
+---
+
+## 📄 Última Actualización
+
+**Fecha:** 2025-10-14
 **Estado:** ✅ Funcional - En desarrollo
-**Versión:** 1.0.0
+**Versión:** 1.1.0
+**Última mejora:** Refactorización del sistema de verificación semanal
 
 ---
 

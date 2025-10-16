@@ -3,7 +3,6 @@ import { configureStore } from '@reduxjs/toolkit';
 import playersReducer from './slices/playersSlice';
 import sessionsReducer from './slices/sessionsSlice';
 import authReducer from './slices/authSlice';
-import warningMiddleware from './middleware/warningMiddleware';
 
 // Cargar estado inicial desde localStorage
 const loadState = () => {
@@ -34,8 +33,6 @@ const store = configureStore({
         players: playersReducer,
         sessions: sessionsReducer,
     },
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(warningMiddleware),
     preloadedState: loadState(),
 });
 
