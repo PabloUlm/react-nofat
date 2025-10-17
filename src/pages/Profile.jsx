@@ -5,6 +5,8 @@ import { selectPlayerSessions } from '../redux/slices/sessionsSlice';
 import { uploadSession } from '../redux/slices/sessionsSlice';
 import { removeWarning } from '../redux/slices/playersSlice';
 import { checkWeeklyCompliance } from '../redux/thunks/checkWeeklyCompliance';
+import { generateRecoveryWorkout } from '../redux/slices/workoutsSlice';
+import WorkoutStats from '../components/workout/WorkoutStats';
 import { useState } from 'react';
 
 function Profile() {
@@ -15,11 +17,17 @@ function Profile() {
     const [showRecovery, setShowRecovery] = useState(false);
 
     const handleRecoveryWorkout = () => {
+        // Generar workout de recuperación
+        dispatch(generateRecoveryWorkout({
+            duration: 20,
+            playerId: currentUser.id
+        }));
+
         const result = dispatch(
             uploadSession({
                 playerId: currentUser.id,
-                photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="300"%3E%3Crect width="300" height="300" fill="%234F46E5"/%3E%3Ctext x="50%25" y="50%25" font-size="80" text-anchor="middle" dy=".3em" fill="white"%3E💪%3C/text%3E%3C/svg%3E',
-                result: 'Ejercicio de Recuperación',
+                photo: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="150" height="150"%3E%3Crect width="150" height="150" fill="%2310B981"/%3E%3Ctext x="50%25" y="50%25" font-size="60" text-anchor="middle" dy=".3em" fill="white"%3E🔄%3C/text%3E%3C/svg%3E',
+                result: 'Ejercicio de Recuperación - 20 min',
                 date: new Date().toISOString(),
                 isRecovery: true,
             })
@@ -94,7 +102,7 @@ Detalles en consola del navegador
                                     ⚠️ Tienes {player.warnings} amonestación(es)
                                 </h3>
                                 <p className="text-sm text-yellow-700 mt-1">
-                                    Completa un ejercicio de recuperación para eliminar una amonestación
+                                    Completa un ejercicio de recuperación (20 min) para eliminar una amonestación
                                 </p>
                             </div>
                             <button
@@ -107,7 +115,7 @@ Detalles en consola del navegador
                     </div>
                 )}
 
-                {/* VERIFICACIÓN SEMANAL - Mejorado */}
+                {/* VERIFICACIÓN SEMANAL */}
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
                     <div className="flex items-center justify-between">
                         <div>
@@ -137,9 +145,11 @@ Detalles en consola del navegador
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                             <h3 className="text-2xl font-bold mb-4">🔄 Ejercicio de Recuperación</h3>
+                            <p className="text-gray-600 mb-4">
+                                El ejercicio de recuperación es un AMRAP de <strong>20 minutos</strong> con ejercicios de bajo impacto enfocados en core y glúteos.
+                            </p>
                             <p className="text-gray-600 mb-6">
-                                Al completar este ejercicio eliminarás una amonestación. ¿Estás seguro de que
-                                has realizado el ejercicio?
+                                Al completar este ejercicio eliminarás <strong>una amonestación</strong>. ¿Estás seguro de que has realizado el ejercicio?
                             </p>
                             <div className="flex space-x-4">
                                 <button
@@ -158,40 +168,43 @@ Detalles en consola del navegador
                         </div>
                     </div>
                 )}
+            </div>
 
-                {/* Historial */}
-                <div className="mt-6">
-                    <h3 className="text-xl font-bold mb-4">📊 Historial Completo</h3>
-                    <div className="space-y-2">
-                        {sessions.length === 0 ? (
-                            <p className="text-gray-500 text-center py-8">No hay sesiones registradas</p>
-                        ) : (
-                            sessions
-                                .slice()
-                                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                .map((session) => (
-                                    <div
-                                        key={session.id}
-                                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                                    >
-                                        <div>
-                                            <p className="font-semibold">
-                                                {session.isRecovery ? '🔄 Recuperación' : '💪 Sesión Regular'}
-                                            </p>
-                                            <p className="text-sm text-gray-600">
-                                                {new Date(session.date).toLocaleDateString('es-ES', {
-                                                    weekday: 'long',
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                })}
-                                            </p>
-                                        </div>
-                                        <p className="font-bold text-indigo-600">{session.result}</p>
+            {/* NUEVO: Estadísticas de Workouts */}
+            <WorkoutStats playerId={currentUser.id} />
+
+            {/* Historial Completo de Sesiones */}
+            <div className="bg-white rounded-lg shadow p-6 mt-6">
+                <h3 className="text-xl font-bold mb-4">📊 Historial Completo</h3>
+                <div className="space-y-2">
+                    {sessions.length === 0 ? (
+                        <p className="text-gray-500 text-center py-8">No hay sesiones registradas</p>
+                    ) : (
+                        sessions
+                            .slice()
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                            .map((session) => (
+                                <div
+                                    key={session.id}
+                                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                                >
+                                    <div>
+                                        <p className="font-semibold">
+                                            {session.isRecovery ? '🔄 Recuperación' : '💪 Sesión Regular'}
+                                        </p>
+                                        <p className="text-sm text-gray-600">
+                                            {new Date(session.date).toLocaleDateString('es-ES', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            })}
+                                        </p>
                                     </div>
-                                ))
-                        )}
-                    </div>
+                                    <p className="font-bold text-indigo-600">{session.result}</p>
+                                </div>
+                            ))
+                    )}
                 </div>
             </div>
         </div>

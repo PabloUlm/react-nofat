@@ -3,6 +3,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import playersReducer from './slices/playersSlice';
 import sessionsReducer from './slices/sessionsSlice';
 import authReducer from './slices/authSlice';
+import workoutsReducer from './slices/workoutsSlice'; // NUEVO
 
 // Cargar estado inicial desde localStorage
 const loadState = () => {
@@ -32,6 +33,7 @@ const store = configureStore({
         auth: authReducer,
         players: playersReducer,
         sessions: sessionsReducer,
+        workouts: workoutsReducer,
     },
     preloadedState: loadState(),
 });
@@ -42,6 +44,7 @@ store.subscribe(() => {
         players: store.getState().players,
         sessions: store.getState().sessions,
         auth: store.getState().auth,
+        workouts: store.getState().workouts,
     });
 });
 

@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { selectIsAuthenticated, selectCurrentUser } from './redux/slices/authSlice';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Leaderboard from './pages/LeaderboardPage';
+import RankingsPage from './pages/RankingsPage';
 import Profile from './pages/Profile';
 
 function App() {
@@ -38,14 +38,14 @@ function App() {
                                     Dashboard
                                 </button>
                                 <button
-                                    onClick={() => setCurrentPage('leaderboard')}
+                                    onClick={() => setCurrentPage('rankings')}
                                     className={`${
-                                        currentPage === 'leaderboard'
+                                        currentPage === 'rankings'
                                             ? 'border-indigo-500 text-gray-900'
                                             : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                                     } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                                 >
-                                    Clasificación
+                                    Rankings
                                 </button>
                                 <button
                                     onClick={() => setCurrentPage('profile')}
@@ -60,9 +60,9 @@ function App() {
                             </div>
                         </div>
                         <div className="flex items-center">
-              <span className="text-sm text-gray-700 mr-4">
-                {currentUser?.name}
-              </span>
+                            <span className="text-sm text-gray-700 mr-4">
+                                {currentUser?.name}
+                            </span>
                             <img
                                 className="h-8 w-8 rounded-full"
                                 src={currentUser?.photo}
@@ -76,7 +76,7 @@ function App() {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 {currentPage === 'dashboard' && <Dashboard />}
-                {currentPage === 'leaderboard' && <Leaderboard />}
+                {currentPage === 'rankings' && <RankingsPage />}
                 {currentPage === 'profile' && <Profile />}
             </main>
         </div>

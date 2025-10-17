@@ -4,6 +4,8 @@ import { selectPlayerById } from '../redux/slices/playersSlice';
 import { selectPlayerSessions } from '../redux/slices/sessionsSlice';
 import SessionUpload from '../components/session/SessionUpload';
 import WeeklyProgress from '../components/session/WeeklyProgress';
+import WeeklyWorkout from '../components/workout/WeeklyWorkout'; // NUEVO
+import MonthlyBalance from '../components/workout/MonthlyBalance'; // NUEVO
 import WarningBadge from '../components/player/WarningBadge';
 import { getWeekNumber } from '../utils/dateHelpers';
 
@@ -49,8 +51,14 @@ function Dashboard() {
                 </div>
             </div>
 
+            {/* NUEVO: Workout de la Semana */}
+            <WeeklyWorkout />
+
             {/* Progreso Semanal */}
             <WeeklyProgress playerId={currentUser.id} />
+
+            {/* NUEVO: Balance Mensual */}
+            <MonthlyBalance />
 
             {/* Subir Sesión */}
             <SessionUpload playerId={currentUser.id} />
