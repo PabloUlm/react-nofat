@@ -70,112 +70,16 @@ function MuscleRankings() {
                 </div>
 
                 <div className="space-y-4">
-                    {muscleRanking.map((player, index) => {
-                        const badges = useSelector(state => selectPlayerBadges(state, player.playerId));
-                        const isExpanded = expandedPlayer === player.playerId;
-
-                        return (
-                            <div
-                                key={player.playerId}
-                                className={`border rounded-lg overflow-hidden ${
-                                    index === 0 ? 'border-yellow-400 bg-yellow-50' :
-                                        index === 1 ? 'border-gray-400 bg-gray-50' :
-                                            index === 2 ? 'border-orange-400 bg-orange-50' :
-                                                'border-gray-200'
-                                }`}
-                            >
-                                <div className="p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            {/* Posición */}
-                                            <div className="text-3xl font-bold">
-                                                {index === 0 && '🥇'}
-                                                {index === 1 && '🥈'}
-                                                {index === 2 && '🥉'}
-                                                {index > 2 && <span className="text-gray-500">#{index + 1}</span>}
-                                            </div>
-
-                                            {/* Foto y nombre */}
-                                            <img
-                                                src={player.playerPhoto}
-                                                alt={player.playerName}
-                                                className="w-12 h-12 rounded-full"
-                                            />
-                                            <div>
-                                                <p className="font-bold text-lg">{player.playerName}</p>
-
-                                                {/* Badges */}
-                                                {badges.length > 0 && (
-                                                    <div className="flex gap-1 mt-1">
-                                                        {badges.map(badge => (
-                                                            <span
-                                                                key={badge.id}
-                                                                className={`text-xs px-2 py-0.5 rounded ${getBadgeTier(badge.tier)}`}
-                                                                title={badge.description}
-                                                            >
-                                {badge.name}
-                              </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Puntos */}
-                                        <div className="text-right">
-                                            <p className="text-3xl font-bold text-indigo-600">
-                                                {player.points}
-                                            </p>
-                                            <p className="text-sm text-gray-500">puntos</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Botón de desglose */}
-                                    <button
-                                        onClick={() => setExpandedPlayer(isExpanded ? null : player.playerId)}
-                                        className="mt-3 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                                    >
-                                        {isExpanded ? '▲ Ocultar desglose' : '▼ Ver desglose detallado'}
-                                    </button>
-
-                                    {/* Desglose detallado */}
-                                    {isExpanded && (
-                                        <div className="mt-4 p-3 bg-white rounded border border-gray-200">
-                                            <p className="text-sm font-semibold text-gray-700 mb-2">
-                                                📊 Desglose de puntos:
-                                            </p>
-                                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                                                {player.breakdown
-                                                    .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                                    .map((item, idx) => (
-                                                        <div
-                                                            key={idx}
-                                                            className="text-xs p-2 bg-gray-50 rounded flex justify-between"
-                                                        >
-                                                            <div>
-                                                                <span className="font-medium">{item.exercise}</span>
-                                                                <span className="text-gray-500 ml-2">
-                                  ({item.difficulty})
-                                </span>
-                                                                <span className="text-gray-400 ml-2">
-                                  {new Date(item.date).toLocaleDateString('es-ES', {
-                                      day: 'numeric',
-                                      month: 'short'
-                                  })}
-                                </span>
-                                                            </div>
-                                                            <div className="font-semibold">
-                                                                {item.reps} reps × {item.points / item.reps} = {item.points.toFixed(1)} pts
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {muscleRanking.map((player, index) => (
+                        <PlayerRankingCard
+                            key={player.playerId}
+                            player={player}
+                            index={index}
+                            isExpanded={expandedPlayer === player.playerId}
+                            onToggleExpand={() => setExpandedPlayer(expandedPlayer === player.playerId ? null : player.playerId)}
+                            getBadgeTier={getBadgeTier}
+                        />
+                    ))}
                 </div>
             </div>
         );
@@ -243,6 +147,113 @@ function MuscleRankings() {
                         </button>
                     );
                 })}
+            </div>
+        </div>
+    );
+}
+
+// Componente separado para cada card de jugador
+function PlayerRankingCard({ player, index, isExpanded, onToggleExpand, getBadgeTier }) {
+    // ✅ AHORA el hook está en el nivel superior del componente
+    const badges = useSelector(state => selectPlayerBadges(state, player.playerId));
+
+    return (
+        <div
+            className={`border rounded-lg overflow-hidden ${
+                index === 0 ? 'border-yellow-400 bg-yellow-50' :
+                    index === 1 ? 'border-gray-400 bg-gray-50' :
+                        index === 2 ? 'border-orange-400 bg-orange-50' :
+                            'border-gray-200'
+            }`}
+        >
+            <div className="p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        {/* Posición */}
+                        <div className="text-3xl font-bold">
+                            {index === 0 && '🥇'}
+                            {index === 1 && '🥈'}
+                            {index === 2 && '🥉'}
+                            {index > 2 && <span className="text-gray-500">#{index + 1}</span>}
+                        </div>
+
+                        {/* Foto y nombre */}
+                        <img
+                            src={player.playerPhoto}
+                            alt={player.playerName}
+                            className="w-12 h-12 rounded-full"
+                        />
+                        <div>
+                            <p className="font-bold text-lg">{player.playerName}</p>
+
+                            {/* Badges */}
+                            {badges.length > 0 && (
+                                <div className="flex gap-1 mt-1">
+                                    {badges.map(badge => (
+                                        <span
+                                            key={badge.id}
+                                            className={`text-xs px-2 py-0.5 rounded ${getBadgeTier(badge.tier)}`}
+                                            title={badge.description}
+                                        >
+                      {badge.name}
+                    </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Puntos */}
+                    <div className="text-right">
+                        <p className="text-3xl font-bold text-indigo-600">
+                            {player.points}
+                        </p>
+                        <p className="text-sm text-gray-500">puntos</p>
+                    </div>
+                </div>
+
+                {/* Botón de desglose */}
+                <button
+                    onClick={onToggleExpand}
+                    className="mt-3 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                >
+                    {isExpanded ? '▲ Ocultar desglose' : '▼ Ver desglose detallado'}
+                </button>
+
+                {/* Desglose detallado */}
+                {isExpanded && (
+                    <div className="mt-4 p-3 bg-white rounded border border-gray-200">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">
+                            📊 Desglose de puntos:
+                        </p>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {player.breakdown
+                                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                .map((item, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="text-xs p-2 bg-gray-50 rounded flex justify-between"
+                                    >
+                                        <div>
+                                            <span className="font-medium">{item.exercise}</span>
+                                            <span className="text-gray-500 ml-2">
+                        ({item.difficulty})
+                      </span>
+                                            <span className="text-gray-400 ml-2">
+                        {new Date(item.date).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'short'
+                        })}
+                      </span>
+                                        </div>
+                                        <div className="font-semibold">
+                                            {item.reps} reps × {(item.points / item.reps).toFixed(2)} = {item.points.toFixed(1)} pts
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

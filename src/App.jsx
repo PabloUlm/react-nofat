@@ -1,20 +1,51 @@
 // src/App.jsx
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { selectIsAuthenticated, selectCurrentUser } from './redux/slices/authSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { selectIsAuthenticated, selectCurrentUser, logout } from './redux/slices/authSlice';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import RankingsPage from './pages/RankingsPage';
 import Profile from './pages/Profile';
+import WorkoutSession from './pages/WorkoutSession';
 
 function App() {
-    const [currentPage, setCurrentPage] = useState('dashboard');
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const currentUser = useSelector(selectCurrentUser);
+
+    const handleLogout = () => {
+        if (confirm('¿Seguro que quieres cerrar sesión?')) {
+            dispatch(logout());
+            navigate('/');
+        }
+    };
 
     if (!isAuthenticated) {
         return <Login />;
     }
+
+    return (
+        <Routes>
+            {/* Ruta de Workout Session (sin navbar) */}
+            <Route path="/workout-session" element={<WorkoutSession />} />
+
+            {/* Rutas con Navbar */}
+            <Route path="/*" element={<MainLayout onLogout={handleLogout} currentUser={currentUser} />} />
+        </Routes>
+    );
+}
+
+// Layout principal con Navbar
+function MainLayout({ onLogout, currentUser }) {
+    const [currentPage, setCurrentPage] = useState('dashboard');
+    const navigate = useNavigate();
+
+    const handleNavigation = (page, path) => {
+        setCurrentPage(page);
+        navigate(path);
+    };
 
     return (
         <div className="min-h-screen bg-gray-100">
@@ -28,7 +59,7 @@ function App() {
                             </div>
                             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                                 <button
-                                    onClick={() => setCurrentPage('dashboard')}
+                                    onClick={() => handleNavigation('dashboard', '/dashboard')}
                                     className={`${
                                         currentPage === 'dashboard'
                                             ? 'border-indigo-500 text-gray-900'
@@ -38,7 +69,7 @@ function App() {
                                     Dashboard
                                 </button>
                                 <button
-                                    onClick={() => setCurrentPage('rankings')}
+                                    onClick={() => handleNavigation('rankings', '/rankings')}
                                     className={`${
                                         currentPage === 'rankings'
                                             ? 'border-indigo-500 text-gray-900'
@@ -48,7 +79,7 @@ function App() {
                                     Rankings
                                 </button>
                                 <button
-                                    onClick={() => setCurrentPage('profile')}
+                                    onClick={() => handleNavigation('profile', '/profile')}
                                     className={`${
                                         currentPage === 'profile'
                                             ? 'border-indigo-500 text-gray-900'
@@ -68,6 +99,13 @@ function App() {
                                 src={currentUser?.photo}
                                 alt={currentUser?.name}
                             />
+                            <button
+                                onClick={onLogout}
+                                className="ml-4 text-sm text-red-600 hover:text-red-800 font-semibold transition-colors"
+                                title="Cerrar sesión"
+                            >
+                                Cerrar Sesión
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -75,9 +113,12 @@ function App() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                {currentPage === 'dashboard' && <Dashboard />}
-                {currentPage === 'rankings' && <RankingsPage />}
-                {currentPage === 'profile' && <Profile />}
+                <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/rankings" element={<RankingsPage />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
             </main>
         </div>
     );

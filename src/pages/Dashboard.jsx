@@ -1,19 +1,31 @@
+// src/pages/Dashboard.jsx
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { selectCurrentUser } from '../redux/slices/authSlice';
 import { selectPlayerById } from '../redux/slices/playersSlice';
 import { selectPlayerSessions } from '../redux/slices/sessionsSlice';
-import SessionUpload from '../components/session/SessionUpload';
+import { selectCurrentWeekWorkout } from '../redux/slices/workoutsSlice';
 import WeeklyProgress from '../components/session/WeeklyProgress';
-import WeeklyWorkout from '../components/workout/WeeklyWorkout'; // NUEVO
-import MonthlyBalance from '../components/workout/MonthlyBalance'; // NUEVO
 import WarningBadge from '../components/player/WarningBadge';
+import WeeklyWorkout from '../components/workout/WeeklyWorkout';
+import MonthlyBalance from '../components/workout/MonthlyBalance';
 import { getWeekNumber } from '../utils/dateHelpers';
 
 function Dashboard() {
+    const navigate = useNavigate();
     const currentUser = useSelector(selectCurrentUser);
     const player = useSelector((state) => selectPlayerById(state, currentUser.id));
     const sessions = useSelector((state) => selectPlayerSessions(state, currentUser.id));
+    const currentWeekWorkout = useSelector(selectCurrentWeekWorkout);
     const currentWeek = getWeekNumber(new Date());
+
+    const handleStartWorkout = () => {
+        if (!currentWeekWorkout) {
+            alert('⚠️ Necesitas generar un workout semanal primero');
+            return;
+        }
+        navigate('/workout-session');
+    };
 
     return (
         <div className="px-4 py-6 sm:px-0">
@@ -51,17 +63,37 @@ function Dashboard() {
                 </div>
             </div>
 
-            {/* NUEVO: Workout de la Semana */}
+            {/* Workout de la Semana */}
             <WeeklyWorkout />
+
+            {/* NUEVO: Botón Realizar Sesión */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg shadow-lg p-6 mt-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-2xl font-bold text-white mb-2">
+                            💪 ¿Listo para entrenar?
+                        </h3>
+                        <p className="text-green-100">
+                            {currentWeekWorkout
+                                ? `Workout: ${currentWeekWorkout.focus} - ${currentWeekWorkout.duration} min`
+                                : 'Genera un workout primero'}
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleStartWorkout}
+                        disabled={!currentWeekWorkout}
+                        className="bg-white text-green-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                    >
+                        🚀 Realizar Sesión
+                    </button>
+                </div>
+            </div>
 
             {/* Progreso Semanal */}
             <WeeklyProgress playerId={currentUser.id} />
 
-            {/* NUEVO: Balance Mensual */}
+            {/* Balance Mensual */}
             <MonthlyBalance />
-
-            {/* Subir Sesión */}
-            <SessionUpload playerId={currentUser.id} />
 
             {/* Últimas Sesiones */}
             <div className="bg-white rounded-lg shadow p-6 mt-6">

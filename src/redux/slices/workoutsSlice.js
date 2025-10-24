@@ -132,6 +132,7 @@ const workoutsSlice = createSlice({
 
 /**
  * Genera un workout basado en el foco semanal
+ * MEJORADO: Evita duplicados usando Set de IDs
  */
 function generateWorkout(focus, duration, difficulty) {
     const exerciseCount = Math.ceil(duration / 2); // ~2 min por ejercicio en AMRAP
@@ -156,18 +157,30 @@ function generateWorkout(focus, duration, difficulty) {
         secondaryExercises = secondaryExercises.filter(ex => ex.difficulty === difficulty);
     }
 
-    // Seleccionar aleatoriamente
-    const selectedPrimary = primaryExercises
-        .sort(() => 0.5 - Math.random())
-        .slice(0, primaryCount);
+    // ✅ MEJORADO: Usar Set para garantizar unicidad
+    const selectedIds = new Set();
+    const selectedExercises = [];
 
-    const selectedSecondary = secondaryExercises
-        .sort(() => 0.5 - Math.random())
-        .slice(0, secondaryCount);
+    // Seleccionar ejercicios primarios (sin duplicados)
+    const shuffledPrimary = [...primaryExercises].sort(() => 0.5 - Math.random());
+    for (const exercise of shuffledPrimary) {
+        if (selectedIds.has(exercise.id)) continue;
+        selectedExercises.push(exercise);
+        selectedIds.add(exercise.id);
+        if (selectedExercises.length >= primaryCount) break;
+    }
 
-    // Mezclar y retornar
-    return [...selectedPrimary, ...selectedSecondary]
-        .sort(() => 0.5 - Math.random());
+    // Seleccionar ejercicios secundarios (sin duplicados y sin repetir primarios)
+    const shuffledSecondary = [...secondaryExercises].sort(() => 0.5 - Math.random());
+    for (const exercise of shuffledSecondary) {
+        if (selectedIds.has(exercise.id)) continue;
+        selectedExercises.push(exercise);
+        selectedIds.add(exercise.id);
+        if (selectedExercises.length >= exerciseCount) break;
+    }
+
+    // Mezclar el orden final y retornar
+    return selectedExercises.sort(() => 0.5 - Math.random());
 }
 
 export const {

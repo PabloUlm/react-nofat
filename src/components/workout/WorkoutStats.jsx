@@ -57,7 +57,9 @@ function WorkoutStats({ playerId }) {
                     <p className="text-sm text-gray-600">Recuperaciones</p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-green-600">{totalRounds}</p>
+                    <p className="text-3xl font-bold text-green-600">
+                        {totalRoundsDecimal > 0 ? totalRoundsDecimal.toFixed(1) : '0'}
+                    </p>
                     <p className="text-sm text-gray-600">Rondas Totales</p>
                 </div>
                 <div className="bg-orange-50 p-4 rounded-lg text-center">
@@ -92,14 +94,19 @@ function WorkoutStats({ playerId }) {
                                 </div>
 
                                 <div className="text-right">
-                                    {workout.type === 'weekly' && workout.rounds > 0 && (
-                                        <p className="text-2xl font-bold text-indigo-600">
-                                            {workout.rounds}
-                                            <span className="text-sm text-gray-500 ml-1">rondas</span>
-                                        </p>
+                                    {workout.type === 'weekly' && (
+                                        <>
+                                            <p className="text-2xl font-bold text-indigo-600">
+                                                {workout.rounds || 0}
+                                                {workout.partialExercise > 0 && (
+                                                    <span className="text-lg">.{workout.partialExercise}</span>
+                                                )}
+                                            </p>
+                                            <p className="text-xs text-gray-500">rondas</p>
+                                        </>
                                     )}
                                     {workout.duration && (
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-gray-500 mt-1">
                                             {workout.duration} min
                                         </p>
                                     )}
