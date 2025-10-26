@@ -1,11 +1,12 @@
 // src/components/workout/PostWorkoutForm.jsx
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadSession } from '../../redux/slices/sessionsSlice';
 import { markWorkoutCompleted, selectMuscleGroupRankings } from '../../redux/slices/workoutsSlice';
 import { removeWarning } from '../../redux/slices/playersSlice';
 import { getWeekNumber } from '../../utils/dateHelpers';
 import ProgressModal from './ProgressModal';
+import CameraCapture from './CameraCapture';
 
 function PostWorkoutForm({ workout, isRecovery, playerId, onComplete }) {
     const dispatch = useDispatch();
@@ -14,11 +15,24 @@ function PostWorkoutForm({ workout, isRecovery, playerId, onComplete }) {
     const [completedRounds, setCompletedRounds] = useState('');
     const [partialExercise, setPartialExercise] = useState('');
     const [photo, setPhoto] = useState('');
+    const [showCamera, setShowCamera] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showProgress, setShowProgress] = useState(false);
 
-    // Capturar rankings ANTES de registrar
-    const rankingsBefore = useSelector(selectMuscleGroupRankings);
+    // Usar useRef para capturar rankings ANTES de cualquier actualización
+    const rankingsBeforeRef = useRef(null);
+
+    // Capturar rankings actuales en el primer render
+    const currentRankings = useSelector(selectMuscleGroupRankings);
+    if (!rankingsBeforeRef.current) {
+        // Hacer deep copy para evitar referencias
+        rankingsBeforeRef.current = JSON.parse(JSON.stringify(currentRankings));
+    }
+
+    const handleCameraCapture = (imageData) => {
+        setPhoto(imageData);
+        setShowCamera(false);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -114,18 +128,45 @@ function PostWorkoutForm({ workout, isRecovery, playerId, onComplete }) {
 
                 {/* Formulario */}
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Foto (opcional) */}
+                    {/* Foto con Cámara */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
                             📸 Foto de Celebración (opcional)
                         </label>
-                        <input
-                            type="url"
-                            value={photo}
-                            onChange={(e) => setPhoto(e.target.value)}
-                            placeholder="https://ejemplo.com/foto.jpg"
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                        />
+
+                        {/* Botones de captura */}
+                        <div className="flex gap-3 mb-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowCamera(true)}
+                                className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center justify-center gap-2"
+                            >
+                                📷 Tomar Foto
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPhoto('')}
+                                disabled={!photo}
+                                className="px-4 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Eliminar foto"
+                            >
+                                🗑️
+                            </button>
+                        </div>
+
+                        {/* Preview de foto */}
+                        {photo && (
+                            <div className="mt-3">
+                                <img
+                                    src={photo}
+                                    alt="Preview"
+                                    className="w-full h-48 object-cover rounded-lg border-2 border-indigo-500"
+                                />
+                                <p className="text-xs text-gray-500 mt-2 text-center">
+                                    ✅ Foto capturada ({Math.round(photo.length / 1024)}KB)
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Rondas Completas */}
@@ -205,12 +246,20 @@ function PostWorkoutForm({ workout, isRecovery, playerId, onComplete }) {
             {/* Modal de Progreso */}
             {showProgress && (
                 <ProgressModal
-                    rankingsBefore={rankingsBefore}
+                    rankingsBefore={rankingsBeforeRef.current}
                     playerId={playerId}
                     onClose={() => {
                         setShowProgress(false);
                         onComplete();
                     }}
+                />
+            )}
+
+            {/* Modal de Cámara */}
+            {showCamera && (
+                <CameraCapture
+                    onCapture={handleCameraCapture}
+                    onClose={() => setShowCamera(false)}
                 />
             )}
         </div>
