@@ -1,11 +1,75 @@
 // src/components/workout/WorkoutTimer.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
     const totalSeconds = duration * 60; // Convertir minutos a segundos
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
+    const wakeLockRef = useRef(null);
 
+    // Wake Lock: Mantener pantalla encendida
+    useEffect(() => {
+        let wakeLock = null;
+
+        const requestWakeLock = async () => {
+            try {
+                // Verificar si Wake Lock API está disponible
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLockRef.current = wakeLock;
+                    console.log('✅ Wake Lock activado - Pantalla permanecerá encendida');
+
+                    // Event listener para cuando se pierde el wake lock (ej: cambiar de tab)
+                    wakeLock.addEventListener('release', () => {
+                        console.log('⚠️ Wake Lock liberado');
+                    });
+                } else {
+                    console.warn('⚠️ Wake Lock API no disponible en este navegador');
+                }
+            } catch (err) {
+                console.error('❌ Error al activar Wake Lock:', err);
+            }
+        };
+
+        // Activar Wake Lock al montar el componente
+        requestWakeLock();
+
+        // Limpiar al desmontar
+        return () => {
+            if (wakeLockRef.current) {
+                wakeLockRef.current.release()
+                    .then(() => {
+                        console.log('🔓 Wake Lock liberado al salir');
+                        wakeLockRef.current = null;
+                    });
+            }
+        };
+    }, []);
+
+    // Re-activar Wake Lock cuando la página vuelve a ser visible
+    useEffect(() => {
+        const handleVisibilityChange = async () => {
+            if (document.visibilityState === 'visible' && wakeLockRef.current === null) {
+                try {
+                    if ('wakeLock' in navigator) {
+                        const wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLockRef.current = wakeLock;
+                        console.log('✅ Wake Lock re-activado');
+                    }
+                } catch (err) {
+                    console.error('❌ Error al re-activar Wake Lock:', err);
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
+    // Timer principal
     useEffect(() => {
         // Si está pausado, no hacer nada
         if (isPaused) return;
