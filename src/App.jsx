@@ -40,10 +40,12 @@ function App() {
 // Layout principal con Navbar
 function MainLayout({ onLogout, currentUser }) {
     const [currentPage, setCurrentPage] = useState('dashboard');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
 
     const handleNavigation = (page, path) => {
         setCurrentPage(page);
+        setMobileMenuOpen(false); // Cerrar menú móvil al navegar
         navigate(path);
     };
 
@@ -57,7 +59,8 @@ function MainLayout({ onLogout, currentUser }) {
                             <div className="flex-shrink-0 flex items-center">
                                 <h1 className="text-2xl font-bold text-indigo-600">💪 FitTracker</h1>
                             </div>
-                            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                            {/* Desktop Navigation - Visible desde 768px (md:) */}
+                            <div className="hidden md:ml-6 md:flex md:space-x-8">
                                 <button
                                     onClick={() => handleNavigation('dashboard', '/dashboard')}
                                     className={`${
@@ -90,23 +93,108 @@ function MainLayout({ onLogout, currentUser }) {
                                 </button>
                             </div>
                         </div>
-                        <div className="flex items-center">
-                            <span className="text-sm text-gray-700 mr-4">
-                                {currentUser?.name}
-                            </span>
+
+                        {/* Right side - User info, logout, and burger */}
+                        <div className="flex items-center space-x-4">
+                            {/* User info y logout - Visible desde 768px (md:) */}
+                            <div className="hidden md:flex items-center space-x-4">
+                                <span className="text-sm text-gray-700">
+                                    {currentUser?.name}
+                                </span>
+                                <img
+                                    className="h-8 w-8 rounded-full"
+                                    src={currentUser?.photo}
+                                    alt={currentUser?.name}
+                                />
+                                <button
+                                    onClick={onLogout}
+                                    className="text-sm text-red-600 hover:text-red-800 font-semibold transition-colors"
+                                    title="Cerrar sesión"
+                                >
+                                    Cerrar Sesión
+                                </button>
+                            </div>
+
+                            {/* Mobile menu button - Visible hasta 768px (md:hidden) */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                                aria-expanded={mobileMenuOpen}
+                            >
+                                <span className="sr-only">Abrir menú</span>
+                                {/* Hamburger icon / Close icon */}
+                                {!mobileMenuOpen ? (
+                                    <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                ) : (
+                                    <svg className="block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile menu - Visible hasta 768px (md:hidden) */}
+                <div
+                    className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+                        mobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                    }`}
+                >
+                    <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                        {/* Mobile user info */}
+                        <div className="flex items-center px-3 py-3 border-b border-gray-200 mb-2">
                             <img
-                                className="h-8 w-8 rounded-full"
+                                className="h-10 w-10 rounded-full"
                                 src={currentUser?.photo}
                                 alt={currentUser?.name}
                             />
-                            <button
-                                onClick={onLogout}
-                                className="ml-4 text-sm text-red-600 hover:text-red-800 font-semibold transition-colors"
-                                title="Cerrar sesión"
-                            >
-                                Cerrar Sesión
-                            </button>
+                            <span className="ml-3 text-base font-medium text-gray-900">
+                                {currentUser?.name}
+                            </span>
                         </div>
+
+                        {/* Mobile navigation items */}
+                        <button
+                            onClick={() => handleNavigation('dashboard', '/dashboard')}
+                            className={`${
+                                currentPage === 'dashboard'
+                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            } w-full text-left block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-150`}
+                        >
+                            📊 Dashboard
+                        </button>
+                        <button
+                            onClick={() => handleNavigation('rankings', '/rankings')}
+                            className={`${
+                                currentPage === 'rankings'
+                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            } w-full text-left block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-150`}
+                        >
+                            🏆 Rankings
+                        </button>
+                        <button
+                            onClick={() => handleNavigation('profile', '/profile')}
+                            className={`${
+                                currentPage === 'profile'
+                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            } w-full text-left block pl-3 pr-4 py-3 border-l-4 text-base font-medium transition-colors duration-150`}
+                        >
+                            👤 Mi Perfil
+                        </button>
+
+                        {/* Mobile logout button */}
+                        <button
+                            onClick={onLogout}
+                            className="w-full text-left block pl-3 pr-4 py-3 border-l-4 border-transparent text-red-600 hover:bg-red-50 hover:text-red-800 text-base font-medium transition-colors duration-150"
+                        >
+                            🚪 Cerrar Sesión
+                        </button>
                     </div>
                 </div>
             </nav>

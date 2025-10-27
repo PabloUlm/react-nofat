@@ -1,22 +1,23 @@
 # 🤖 Claude AI - Contexto del Proyecto
 
-> **Proyecto:** FitTracker - Aplicación de seguimiento de entrenamientos
-> **Stack:** React + Redux Toolkit + Tailwind CSS + Vite
-> **Propósito:** App educativa para aprender React y Redux
+> **Proyecto:** FitTracker - Aplicación de seguimiento de entrenamientos AMRAP
+> **Stack:** React + Redux Toolkit + Tailwind CSS + Vite + React Router
+> **Propósito:** App educativa para aprender React y Redux con sistema completo de workouts
 
 ---
 
 ## 📋 Descripción del Proyecto
 
-FitTracker es una aplicación web que permite a usuarios/jugadores:
+FitTracker es una aplicación web de fitness que permite a usuarios/jugadores:
+- Realizar **workouts AMRAP** (As Many Rounds As Possible) con timer interactivo
 - Registrar sesiones de entrenamiento (3 días diferentes por semana)
-- Ver su progreso semanal
-- Competir en un leaderboard global
+- Competir en un **leaderboard global** con rankings por grupos musculares
+- Sistema de **"Reyes de Músculo"** con badges por categoría (🦵 Piernas, 💪 Brazos, etc.)
+- Ver progreso semanal y estadísticas detalladas
 - Recibir amonestaciones por incumplimiento
 - Realizar ejercicios de recuperación para eliminar amonestaciones
-- **NUEVO:** Generar workouts AMRAP semanales automáticos
-- **NUEVO:** Competir por ser el "Rey" de cada grupo muscular
-- **NUEVO:** Ganar badges por logros específicos
+- **Capturar fotos** con la cámara del dispositivo (mobile-first)
+- Sistema de **ciclos de 4 semanas** con rotación de grupos musculares
 
 ### Reglas de Negocio Importantes
 - ✅ Cada usuario debe completar **3 sesiones en 3 días diferentes** cada semana
@@ -24,6 +25,14 @@ FitTracker es una aplicación web que permite a usuarios/jugadores:
 - ❌ **NO se puede** registrar más de 3 días diferentes por semana
 - ⚠️ Si no completa 3 días → Recibe una amonestación
 - 🔄 Ejercicio de recuperación elimina 1 amonestación
+- 💪 **Sistema de ciclos de 4 semanas** con rotación de grupos musculares:
+   - Semana 1: Lower Body (piernas, glúteos)
+   - Semana 2: Core & Cardio (abdomen, cardio)
+   - Semana 3: Upper Body Push (pecho, hombros, tríceps)
+   - Semana 4: Upper Body Pull (espalda, bíceps)
+- 🏆 **Puntos por dificultad**: Beginner (1x), Intermediate (1.5x), Advanced (2x)
+- 👑 **"Rey del músculo"** = jugador con más puntos en cada grupo muscular
+- 📸 **Captura con cámara**: Compresión automática a 50-150KB, cambio front/rear
 
 ---
 
@@ -36,33 +45,40 @@ fitness-tracker/
 │   │   ├── player/
 │   │   │   └── WarningBadge.jsx       # Indicador de amonestaciones
 │   │   ├── session/
-│   │   │   ├── SessionUpload.jsx      # Formulario para subir sesión (CON RONDAS)
+│   │   │   ├── SessionUpload.jsx      # [DEPRECATED] Formulario simple
 │   │   │   └── WeeklyProgress.jsx     # Barra de progreso semanal
-│   │   ├── workout/                   # NUEVO
-│   │   │   ├── WeeklyWorkout.jsx      # Generador y visualizador de workout semanal
-│   │   │   ├── MonthlyBalance.jsx     # Análisis de balance muscular mensual
-│   │   │   └── WorkoutStats.jsx       # Estadísticas personales de workouts
-│   │   └── rankings/                  # NUEVO
-│   │       └── MuscleRankings.jsx     # Rankings por grupo muscular con badges
+│   │   ├── workout/
+│   │   │   ├── WorkoutTimer.jsx       # Timer pantalla completa con navegación
+│   │   │   ├── WorkoutPreCountdown.jsx # Countdown 8 segundos antes de iniciar
+│   │   │   ├── WorkoutComplete.jsx    # Pantalla post-workout con stats
+│   │   │   ├── WorkoutSummary.jsx     # Resumen de workout generado
+│   │   │   └── ExerciseList.jsx       # Lista scrollable de ejercicios
+│   │   └── camera/
+│   │       └── CameraCapture.jsx      # Captura con cámara móvil + compresión
 │   ├── pages/
 │   │   ├── Login.jsx                  # Selección de usuario
-│   │   ├── Dashboard.jsx              # Panel principal con stats + workouts
-│   │   ├── RankingsPage.jsx           # NUEVO: Tabs (General + Reyes Musculares)
-│   │   └── Profile.jsx                # Perfil, recuperación y verificación semanal
+│   │   ├── Dashboard.jsx              # Panel principal con stats
+│   │   ├── LeaderboardPage.jsx        # Clasificación global + Reyes de Músculo
+│   │   ├── Profile.jsx                # Perfil y recuperación
+│   │   ├── WorkoutGeneratorPage.jsx   # Generador de workouts AMRAP
+│   │   ├── WorkoutTimerPage.jsx       # Página del timer (ruta: /workout/:id)
+│   │   └── WorkoutCompletePage.jsx    # Registro post-workout
 │   ├── redux/
 │   │   ├── store.js                   # Configuración del store + localStorage
 │   │   ├── slices/
 │   │   │   ├── authSlice.js          # Autenticación simple
-│   │   │   ├── playersSlice.js       # Gestión de jugadores y warnings
+│   │   │   ├── playersSlice.js       # Gestión de jugadores, warnings y muscle points
 │   │   │   ├── sessionsSlice.js      # Gestión de sesiones con validaciones
-│   │   │   └── workoutsSlice.js      # NUEVO: Workouts, balance, rankings, badges
+│   │   │   └── workoutsSlice.js      # [NEW!] Gestión de workouts AMRAP generados
 │   │   └── thunks/
 │   │       └── checkWeeklyCompliance.js  # Verificación semanal manual
-│   ├── data/                          # NUEVO
-│   │   └── exercises.js               # Base de datos de 32 ejercicios
+│   ├── data/
+│   │   └── exercises.js              # [NEW!] Base de datos de 32 ejercicios
 │   ├── utils/
-│   │   └── dateHelpers.js            # Funciones de fechas y semanas
-│   ├── App.jsx                        # Navegación principal
+│   │   ├── dateHelpers.js            # Funciones de fechas y semanas
+│   │   ├── workoutGenerator.js       # [NEW!] Algoritmo de generación de workouts
+│   │   └── musclePointsCalculator.js # [NEW!] Cálculo de puntos por grupo muscular
+│   ├── App.jsx                        # Navegación principal con React Router
 │   ├── main.jsx                       # Entry point con Provider
 │   └── index.css                      # Tailwind imports
 ├── tailwind.config.js
@@ -70,11 +86,156 @@ fitness-tracker/
 └── package.json
 ```
 
+**⚠️ NOTA:** El archivo `SessionUpload.jsx` está deprecado. Ahora se usa el flujo completo de workout:
+1. `WorkoutGeneratorPage` → genera workout
+2. `WorkoutTimerPage` → ejecuta con timer
+3. `WorkoutCompletePage` → registra sesión con foto
+
+---
+
+## 💪 Sistema de Ejercicios AMRAP
+
+### Base de Datos de Ejercicios (32 ejercicios)
+
+Cada ejercicio tiene:
+- **ID único**: Para evitar duplicados
+- **Nombre**: Descripción clara del ejercicio
+- **Grupos musculares**: Array de músculos trabajados (ej: `['legs', 'glutes']`)
+- **Nivel**: `'beginner' | 'intermediate' | 'advanced'`
+- **Equipo**: `'bodyweight' | 'dumbbells' | 'barbell' | 'kettlebell' | 'box'`
+- **Descripción**: Instrucciones del ejercicio
+- **Reps sugeridas**: Número base de repeticiones
+
+```javascript
+// Ejemplo de ejercicio
+{
+  id: 'squat',
+  name: 'Air Squats',
+  muscleGroups: ['legs', 'glutes'],
+  level: 'beginner',
+  equipment: 'bodyweight',
+  description: 'Sentadillas sin peso',
+  suggestedReps: 15
+}
+```
+
+### Grupos Musculares Disponibles
+- `legs` 🦵 (Piernas)
+- `glutes` 🍑 (Glúteos)
+- `core` 💪 (Core/Abdomen)
+- `cardio` ❤️ (Cardio)
+- `chest` 💪 (Pecho)
+- `shoulders` 💪 (Hombros)
+- `triceps` 💪 (Tríceps)
+- `back` 💪 (Espalda)
+- `biceps` 💪 (Bíceps)
+
+### Sistema de Ciclos (4 semanas)
+
+```javascript
+const WEEK_FOCUS = {
+  1: { primary: ['legs', 'glutes'], name: 'Lower Body Week' },
+  2: { primary: ['core', 'cardio'], name: 'Core & Cardio Week' },
+  3: { primary: ['chest', 'shoulders', 'triceps'], name: 'Upper Push Week' },
+  4: { primary: ['back', 'biceps'], name: 'Upper Pull Week' }
+};
+```
+
+- La semana se calcula con `getWeekNumber(date) % 4 + 1`
+- El generador de workouts selecciona **70% de ejercicios del grupo focal** de la semana
+- El 30% restante son ejercicios complementarios para variedad
+- Los ciclos se repiten automáticamente cada 4 semanas
+
+---
+
+## 🏆 Sistema de Puntos y Rankings
+
+### Cálculo de Puntos por Ejercicio
+
+```javascript
+// Multiplicadores por dificultad
+const DIFFICULTY_MULTIPLIER = {
+  beginner: 1,
+  intermediate: 1.5,
+  advanced: 2
+};
+
+// Ejemplo: Push-ups (intermediate) → 15 reps × 1.5 = 22.5 puntos
+// Divididos entre músculos: chest (11.25), triceps (7.5), shoulders (3.75)
+```
+
+**Reglas de distribución:**
+- Los puntos se dividen proporcionalmente entre todos los grupos musculares del ejercicio
+- Ejercicios con 1 músculo: 100% de puntos a ese músculo
+- Ejercicios con 2 músculos: 50% cada uno
+- Ejercicios con 3+ músculos: Se divide equitativamente
+
+### Muscle Kings (Reyes de Músculo)
+
+El sistema identifica al jugador con más puntos en cada grupo muscular:
+- 🦵 **Rey de Piernas**
+- 🍑 **Rey de Glúteos**
+- 💪 **Rey de Core**
+- ❤️ **Rey de Cardio**
+- 💪 **Rey de Pecho**
+- 💪 **Rey de Hombros**
+- 💪 **Rey de Tríceps**
+- 💪 **Rey de Espalda**
+- 💪 **Rey de Bíceps**
+
+Los badges se muestran en el Leaderboard junto a los nombres de los jugadores.
+
+---
+
+## 🎯 Flujo de Usuario: Workout Completo
+
+### 1. Generar Workout (WorkoutGeneratorPage)
+- Usuario hace clic en "💪 Generar Workout"
+- Sistema genera workout basado en la semana actual del ciclo
+- Selecciona 4-6 ejercicios (70% del grupo focal)
+- Calcula puntos potenciales totales
+- Muestra resumen con lista de ejercicios
+
+### 2. Countdown Pre-Workout (WorkoutPreCountdown)
+- Al hacer clic en "▶️ Comenzar Workout"
+- Navega a `/workout/:workoutId`
+- Muestra countdown de 8 segundos
+- Pantalla inmersiva preparando al usuario
+
+### 3. Timer Activo (WorkoutTimerPage)
+- **Sticky header** con navegación y timer grande
+- **Lista scrollable** de ejercicios con checkboxes
+- **Botón pausar/reanudar** (icono depende del estado)
+- **Botón finalizar workout** (⏹️) siempre visible
+- Timer corre desde 0:00 hacia arriba
+- Usuario marca ejercicios completados mientras entrena
+
+### 4. Post-Workout (WorkoutCompletePage)
+- Muestra tiempo final (ej: "12:45")
+- Muestra puntos ganados por grupo muscular
+- **Input de rondas completadas** (número)
+- **Captura de foto**:
+   - Opción 1: Subir desde galería (input file)
+   - Opción 2: **Tomar con cámara** (CameraCapture)
+- Botón "✅ Registrar Sesión"
+
+### 5. Camera Capture (Mobile-First)
+- **Vista previa en tiempo real** del stream de la cámara
+- **Botón de cambio de cámara** (front/rear) en la esquina
+- **Captura** dibuja el frame en Canvas
+- **Compresión automática**:
+   - Redimensiona a max 800x600px manteniendo aspect ratio
+   - Comprime a JPEG con quality ajustable
+   - Target: 50-150KB por imagen
+- **Cierra stream** correctamente al desmontar para ahorrar batería
+- Retorna base64 string para guardar en localStorage
+
 ---
 
 ## 🔑 Conceptos Clave de Redux
 
-### Estado Global
+### Estado Global (ACTUALIZADO)
+
 ```javascript
 {
   auth: {
@@ -82,205 +243,175 @@ fitness-tracker/
     isAuthenticated: boolean
   },
   players: {
-    byId: { "1": { id, name, warnings, streak, totalSessions, ... } },
+    byId: { 
+      "1": { 
+        id, name, warnings, streak, totalSessions,
+        musclePoints: {
+          legs: 120.5,
+          core: 85.0,
+          chest: 95.5,
+          // ... otros grupos musculares
+        }
+      } 
+    },
     allIds: ["1", "2", "3"]
   },
   sessions: {
-    byId: { "s1": { id, playerId, date, photo, result, weekNumber, isRecovery } },
+    byId: { 
+      "s1": { 
+        id, playerId, date, photo, result, 
+        weekNumber, isRecovery,
+        workoutId, // [NEW!] referencia al workout usado
+        rounds, // [NEW!] rondas completadas
+        musclePointsEarned // [NEW!] puntos ganados por músculo
+      } 
+    },
     allIds: ["s1", ...],
     byPlayer: { "1": ["s1", "s2"], ... }
   },
-  workouts: {  // NUEVO
-    byWeek: { 
-      "42": { weekNumber, focus, duration, exercises: [...], generatedAt }
+  workouts: { // [NEW!] Slice completo
+    byId: {
+      "w1": {
+        id, weekFocus, exercises: [
+          { exerciseId, name, reps, muscleGroups, level, points }
+        ],
+        totalPotentialPoints,
+        createdAt
+      }
     },
-    completedWorkouts: [
-      { type, weekNumber, exercises, result, rounds, partialExercise, playerId, completedAt }
-    ],
-    monthlyDistribution: { pecho: 10, espalda: 15, core: 20, ... }
+    allIds: ["w1", ...],
+    activeWorkout: "w1" // workout actualmente en progreso
   }
 }
 ```
 
-### Flujo de Datos
+### Nuevos Selectors (workoutsSlice)
+
+```javascript
+// Seleccionar workout activo
+const activeWorkout = useSelector(selectActiveWorkout);
+
+// Seleccionar workout por ID
+const workout = useSelector((state) => selectWorkoutById(state, workoutId));
+
+// Calcular puntos totales de un workout
+const totalPoints = workout.exercises.reduce((sum, ex) => sum + ex.points, 0);
 ```
-Usuario → Componente → dispatch(action) → Thunk/Reducer → Estado actualizado → Re-render
+
+### Nuevos Actions
+
+```javascript
+// Generar nuevo workout
+dispatch(generateWorkout({ weekNumber, exercises: [...] }));
+
+// Marcar workout como activo
+dispatch(setActiveWorkout(workoutId));
+
+// Completar workout (limpiar activo)
+dispatch(completeWorkout(workoutId));
+
+// Registrar sesión con workout data
+dispatch(uploadSession({
+  playerId,
+  workoutId,
+  rounds,
+  photo,
+  musclePointsEarned: { legs: 50, core: 30 }
+}));
 ```
 
 ---
 
-## 🆕 Sistema de Workouts (NUEVO)
+## 📸 Sistema de Captura de Cámara
 
-### 📊 Base de Datos de Ejercicios
+### CameraCapture Component
 
-**Archivo:** `src/data/exercises.js`
+**Props:**
+- `onCapture: (base64Image: string) => void` - Callback con imagen capturada
+- `onClose: () => void` - Callback para cerrar la cámara
 
-- **32 ejercicios** clasificados por:
-    - Grupos musculares (pecho, espalda, hombros, bíceps, tríceps, core, glúteos, cuádriceps, isquios, gemelos, cardio)
-    - Dificultad (principiante, intermedio, avanzado)
-    - Equipamiento (sin equipo, mancuernas, kettlebell, barra, cajón, etc.)
-    - Tipo de reps (count, time, distance)
+**Características:**
+- Usa `navigator.mediaDevices.getUserMedia()` para acceder a la cámara
+- Renderiza stream en `<video>` element
+- Al capturar: dibuja frame actual en `<canvas>`
+- Compresión inteligente:
+  ```javascript
+  // Redimensionar manteniendo aspect ratio
+  const MAX_WIDTH = 800;
+  const MAX_HEIGHT = 600;
+  
+  // Comprimir a JPEG
+  canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+  ```
+- **Limpieza de recursos**: Detiene tracks del stream al desmontar
+- **Switch de cámara**: Cambia entre `facingMode: 'user'` y `'environment'`
 
-**Constantes principales:**
-```javascript
-export const MUSCLE_GROUPS = { CHEST, BACK, SHOULDERS, ... }
-export const DIFFICULTY = { BEGINNER, INTERMEDIATE, ADVANCED }
-export const EQUIPMENT = { NONE, DUMBBELLS, KETTLEBELL, ... }
-export const EXERCISES = [ {...}, {...}, ... ] // 32 ejercicios
-```
-
-### 🔄 Ciclo de Workouts Semanales
-
-El sistema rota automáticamente cada 4 semanas:
-
-1. **Semana 1:** Tren Inferior (60% piernas, 40% core/cardio)
-2. **Semana 2:** Core y Cardio (70% core/cardio, 30% piernas)
-3. **Semana 3:** Tren Superior Push (65% pecho/hombros/tríceps)
-4. **Semana 4:** Tren Superior Pull (60% espalda/bíceps)
-
-### 📝 Sistema de Registro de Sesiones
-
-**Cambios importantes en SessionUpload:**
-- ❌ **Eliminado:** Campo "Resultado/Tiempo" (texto libre)
-- ✅ **Nuevo:** Campo "Rondas Completas" (obligatorio, número entero)
-- ✅ **Nuevo:** Campo "Ejercicio Parcial" (opcional, selector)
-- ✅ **Preview en tiempo real:** Muestra "5.3 rondas" antes de enviar
-
-**Ejemplos de registro:**
-```
-5 rondas completas → "5 rondas"
-5 rondas + ejercicio 3 → "5.3 rondas"
-0 rondas + ejercicio 2 → "0.2 rondas"
-```
-
-**Regla del ejercicio parcial:**
-- ✅ Si COMPLETASTE el ejercicio → cuenta
-- ❌ Si te QUEDASTE EN el ejercicio → NO cuenta
+**Mobile Considerations:**
+- Botones grandes (min 48px) para touch targets
+- Vista previa full-width en mobile
+- Fallback a input file si no hay soporte de cámara
+- Optimizado para iOS Safari y Chrome Android
 
 ---
 
-## 🏆 Sistema de Rankings (NUEVO)
-
-### 💪 Rankings por Grupo Muscular
-
-**Archivo:** `src/components/rankings/MuscleRankings.jsx`
-
-Cada jugador acumula puntos en cada grupo muscular según:
-
-#### Sistema de Puntos:
-```javascript
-// Multiplicadores base por dificultad
-Principiante: ×1
-Intermedio: ×1.5
-Avanzado: ×2
-
-// División entre músculos trabajados
-Ejemplo: Burpees (avanzado, 4 músculos)
-Puntos base: 2
-Por músculo: 2 ÷ 4 = 0.5 puntos/rep
-
-Si completaste 6 reps de burpees:
-- Pecho: +3 pts (0.5 × 6)
-- Core: +3 pts
-- Piernas: +3 pts
-- Cardio: +3 pts
-```
-
-#### Cálculo de Reps Completadas:
-```javascript
-Rondas completas: 5
-Ejercicio parcial: 3 (completado)
-
-Para ejercicio #1: 5 + 1 = 6 reps (llegaste a él en ronda 6)
-Para ejercicio #2: 5 + 1 = 6 reps
-Para ejercicio #3: 5 + 1 = 6 reps (lo completaste)
-Para ejercicio #4: 5 reps (no llegaste)
-Para ejercicio #5: 5 reps (no llegaste)
-```
-
-### 🎖️ Sistema de Badges
-
-**5 tipos de badges** según logros:
-
-1. **👑 Rey Absoluto** (Legendary)
-    - Requisito: Ser #1 en 3+ grupos musculares
-    - Color: Gradient amarillo-naranja
-
-2. **🔥 Especialista** (Epic)
-    - Requisito: Tener 2x o más puntos que el segundo en algún grupo
-    - Color: Gradient púrpura-rosa
-
-3. **⚡ Polivalente** (Rare)
-    - Requisito: Top 3 en 5+ grupos diferentes
-    - Color: Gradient azul-cyan
-
-4. **💎 Elite** (Legendary)
-    - Requisito: Solo ejercicios avanzados (mínimo 3 workouts)
-    - Color: Gradient amarillo-naranja
-
-5. **🏆 Campeón** (Common)
-    - Requisito: Líder en 1 grupo muscular
-    - Color: Gris
-
-### 📊 Visualización de Rankings
-
-**Dos vistas:**
-
-1. **Vista Grid** (por defecto):
-    - Muestra todos los grupos musculares en cards
-    - Cada card muestra el "Rey" actual y top 3
-    - Click para ver detalle completo
-
-2. **Vista Detallada** (al hacer click):
-    - Ranking completo del grupo muscular
-    - Badges de cada jugador
-    - Desglose expandible de puntos por ejercicio
-    - Historial de sesiones con fechas
-
----
-
-## 🎯 Stack Tecnológico
+## 🎨 Stack Tecnológico
 
 ### Core
 - **React 19** - UI library
 - **Redux Toolkit 2.0** - State management
+- **React Router 6** - Client-side routing
 - **Vite 5.x** - Build tool y dev server
 - **Tailwind CSS 3.x** - Utility-first CSS
 
-### Dependencias
-```json
-{
-  "react": "^19.1.1",
-  "react-redux": "^9.2.0",
-  "@reduxjs/toolkit": "^2.9.0"
-}
-```
+### APIs Web Usadas
+- **Canvas API** - Captura y compresión de imágenes
+- **Media Devices API** - Acceso a cámara del dispositivo
+- **localStorage** - Persistencia del estado
 
 ### Herramientas
-- **localStorage** - Persistencia del estado
 - **Pravatar.cc** - Fotos de perfil aleatorias
 - **ISO Week Numbers** - Cálculo de semanas del año
-- **Data URLs** - Imágenes placeholder SVG inline
 
 ---
 
-## 📐 Convenciones de Código
+## 📝 Convenciones de Código
 
 ### Componentes
-- PascalCase para nombres de archivo: `SessionUpload.jsx`
+- PascalCase para nombres de archivo: `WorkoutTimerPage.jsx`
 - Props destructuring: `function Component({ prop1, prop2 }) {}`
 - Export default al final del archivo
+- Hooks en orden: useState → useEffect → useSelector → useDispatch → custom hooks
 
 ### Redux
 - Slices con createSlice de RTK
-- Thunks para lógica compleja antes de dispatch
-- Selectors con prefijo `select`: `selectAllPlayers`
-- Actions con notación `entity/action`: `players/addWarning`
+- Thunks para lógica compleja (NO middlewares para business logic)
+- Selectors con prefijo `select`: `selectActiveWorkout`
+- Actions con notación `entity/action`: `workouts/generateWorkout`
+- Estado normalizado: `byId` + `allIds` para entidades
+
+### Navegación (React Router)
+```javascript
+// En App.jsx
+<Routes>
+  <Route path="/" element={<Dashboard />} />
+  <Route path="/workout/:workoutId" element={<WorkoutTimerPage />} />
+  <Route path="/workout/:workoutId/complete" element={<WorkoutCompletePage />} />
+  // ...
+</Routes>
+
+// Navegación programática
+const navigate = useNavigate();
+navigate(`/workout/${workoutId}`);
+
+// Obtener params
+const { workoutId } = useParams();
+```
 
 ### Estilos
 - Tailwind classes directamente en JSX
 - Clases condicionales con template strings
 - Responsive: `sm:`, `md:`, `lg:`
+- Sticky positioning: `sticky top-0 z-10`
 
 ### Fechas
 - ISO strings para almacenamiento: `new Date().toISOString()`
@@ -300,113 +431,71 @@ npm run build           # Construir para producción
 npm run preview         # Previsualizar build
 
 # Gestión de paquetes
-npm install [package]   # Instalar nuevo paquete
-npm uninstall [package] # Desinstalar paquete
+npm install react-router-dom   # Ya instalado
+npm install [package]          # Instalar nuevo paquete
+npm uninstall [package]        # Desinstalar paquete
 ```
 
 ---
 
-## 🛠 Problemas Conocidos / Limitaciones
+## 🛠️ Problemas Conocidos / Limitaciones
 
 ### Actuales
 - [ ] Verificación de warnings requiere ejecución manual (por diseño en frontend)
 - [ ] No hay validación de fechas futuras
-- [ ] No hay sistema de notificaciones
-- [ ] Fotos son URLs (no upload real)
+- [ ] No hay sistema de notificaciones push
+- [ ] Fotos se guardan en base64 en localStorage (límite ~5-10MB total)
 - [ ] No hay backend (todo en frontend + localStorage)
+- [ ] Timer no persiste si refrescas la página
+- [ ] No hay historial de workouts pasados (solo la sesión registrada)
 
 ### Estado "Como Está"
 - ✅ Validaciones de sesiones funcionan correctamente
 - ✅ Persistencia con localStorage funciona
-- ✅ Leaderboard ordena correctamente
+- ✅ Leaderboard ordena correctamente (sesiones → warnings → streak)
+- ✅ Muscle Kings se calculan correctamente
 - ✅ Sistema de recuperación funciona
 - ✅ Verificación semanal manual funciona correctamente
-- ✅ Generación de workouts semanales funciona
-- ✅ Rankings por grupo muscular con badges funciona
-- ✅ Sistema de puntos y cálculos es preciso
+- ✅ Generador de workouts respeta ciclo de 4 semanas
+- ✅ Captura de cámara funciona en iOS y Android
+- ✅ Compresión de imágenes mantiene tamaño <150KB
 
 ---
 
-## 🎯 Mejoras Implementadas Recientemente
+## 🎯 Posibles Mejoras Futuras
 
-### ✅ v1.2.0 - Sistema de Workouts y Rankings (Última versión)
+### Corto Plazo
+- [ ] Validación de fechas futuras
+- [ ] Confirmación antes de eliminar datos
+- [ ] Dark mode
+- [ ] Exportar estadísticas a CSV/PDF
+- [ ] Historial de workouts completados (lista visual)
+- [ ] Gráfica de progreso de puntos por músculo (Chart.js)
+- [ ] Filtros en leaderboard (por semana, por mes)
+- [ ] Compartir workout en redes sociales
 
-**Features nuevas:**
-1. **Base de datos de ejercicios** (32 ejercicios clasificados)
-2. **Generación automática de workouts AMRAP** (ciclo de 4 semanas)
-3. **Registro mejorado de sesiones** (rondas completas + ejercicio parcial)
-4. **Balance mensual muscular** (análisis visual)
-5. **Rankings por grupo muscular** (11 categorías)
-6. **Sistema de badges** (5 tipos de logros)
-7. **Estadísticas de workouts** (rondas promedio, historial)
+### Medio Plazo
+- [ ] Upload real de imágenes (Cloudinary/AWS S3)
+- [ ] Sistema de notificaciones (toast/snackbar)
+- [ ] Gráficas de progreso (Chart.js/Recharts)
+- [ ] PWA con service workers (funcionar offline)
+- [ ] Historial de amonestaciones
+- [ ] Editor de workouts custom (crear propios)
+- [ ] Timer con sonidos/vibración en milestones
+- [ ] Compartir workout con otros usuarios
 
-**Archivos nuevos:**
-- `src/data/exercises.js`
-- `src/components/workout/WeeklyWorkout.jsx`
-- `src/components/workout/MonthlyBalance.jsx`
-- `src/components/workout/WorkoutStats.jsx`
-- `src/components/rankings/MuscleRankings.jsx`
-- `src/pages/RankingsPage.jsx`
-
-**Archivos modificados:**
-- `src/redux/slices/workoutsSlice.js` (añadido rankings y badges)
-- `src/components/session/SessionUpload.jsx` (sistema de rondas)
-- `src/pages/Dashboard.jsx` (integración de workouts)
-- `src/pages/Profile.jsx` (workout stats)
-- `src/App.jsx` (cambio a RankingsPage)
-- `src/redux/store.js` (añadido workouts reducer)
-
----
-
-## 🎮 Flujo de Usuario Completo
-
-### 1. Login
-```
-Usuario selecciona su perfil → dispatch(login) → Redirige a Dashboard
-```
-
-### 2. Generar Workout Semanal
-```
-Dashboard → "Generar Workout" → Seleccionar dificultad → 
-generateWeeklyWorkout(weekNumber, duration, difficulty) →
-Muestra 5-7 ejercicios según ciclo semanal
-```
-
-### 3. Completar Sesión
-```
-Dashboard → "Registrar Sesión" →
-Rellenar "Rondas Completas": 5 →
-Seleccionar "Ejercicio Parcial": 3. Burpees →
-Preview: "5.3 rondas" →
-Submit →
-uploadSession() + markWorkoutCompleted() →
-Guarda sesión + distribuye puntos a grupos musculares
-```
-
-### 4. Ver Rankings
-```
-Tab "Rankings" → "Reyes Musculares" →
-Click en "💪 pecho" →
-Vista detallada con ranking completo →
-Click "Ver desglose" en jugador →
-Muestra todos sus ejercicios de pecho con puntos
-```
-
-### 5. Verificación Semanal
-```
-Profile → "Ejecutar Verificación Semanal" →
-checkWeeklyCompliance() →
-Revisa semana anterior →
-Añade warnings a quienes no completaron 3 días
-```
-
-### 6. Ejercicio de Recuperación
-```
-Profile → "Hacer Recuperación" →
-generateRecoveryWorkout(20 min) →
-uploadSession(isRecovery: true) →
-removeWarning()
-```
+### Largo Plazo (Requiere Backend)
+- [ ] Backend con Node.js + Express
+- [ ] Base de datos (PostgreSQL/MongoDB)
+- [ ] Autenticación real (JWT + OAuth)
+- [ ] **Cron jobs para verificaciones automáticas** ⭐
+- [ ] API REST/GraphQL
+- [ ] Upload de imágenes a S3/Cloudinary
+- [ ] Notificaciones push (Firebase Cloud Messaging)
+- [ ] Sistema de roles (admin/user/coach)
+- [ ] Emails automáticos (recordatorios, logros)
+- [ ] Sincronización multi-dispositivo en tiempo real
+- [ ] Analytics de uso y engagement
 
 ---
 
@@ -419,57 +508,93 @@ removeWarning()
 - Usar Tailwind (NO CSS modules ni styled-components)
 - Comentar lógica compleja
 - Preferir thunks sobre middlewares para lógica de negocio
-- **NO usar localStorage/sessionStorage en artifacts** (no disponible)
-- Usar React state (useState, useReducer) en artifacts
+- **React Router v6** para navegación (usar useNavigate, useParams)
+- Mobile-first: considerar touch targets, viewport, performance
 
 ### Al Modificar Redux
 - Actualizar selectors si cambias estructura de estado
-- Considerar impacto en localStorage
+- Considerar impacto en localStorage (límite de tamaño)
 - Mantener normalización (byId + allIds)
 - Thunks para lógica compleja, reducers para cambios simples
 - **NO usar middlewares para lógica de negocio** - usar thunks
-- Documentar selectores complejos (como rankings)
+- Documentar nuevos selectors y actions
 
 ### Al Crear Componentes
 - Props tipadas con destructuring
 - Usar hooks de Redux: useSelector, useDispatch
+- Usar hooks de Router: useNavigate, useParams, useLocation
 - Responsive design con Tailwind
-- Accessibility: labels, alt texts, semantic HTML
-- Evitar repetición de lógica (extraer a helpers)
+- Accessibility: labels, alt texts, semantic HTML, ARIA when needed
+- Mobile: touch targets ≥48px, consider thumb zones
+
+### Al Trabajar con Media APIs
+- **Siempre limpiar recursos**: detener tracks de mediaStream
+- **Fallbacks**: verificar soporte del navegador
+- **Permisos**: manejar caso de denegación
+- **Performance**: considerar batería en mobile
+- **Compresión**: usar Canvas API para reducir tamaño de imágenes
+- **Testing**: probar en iOS Safari + Chrome Android
 
 ### Al Debuggear
 - Usar Redux DevTools para ver estado y acciones
 - console.log en thunks para seguir flujo
 - Verificar localStorage en DevTools → Application
 - React DevTools para ver props y state
-- Verificar que IDs de ejercicios no estén duplicados
+- Network tab para verificar permisos de cámara
+- Canvas debugging: verificar dimensiones y dataURL
 
 ---
 
 ## 🧪 Testing Manual
 
-### Flujo Completo de Prueba
+### Flujo Completo de Prueba: Workout
 1. Login con usuario
-2. **Generar workout semanal** con dificultad intermedia
-3. **Subir sesión** → Rellenar rondas: 5, ejercicio parcial: 3
-4. Verificar que aparece en dashboard con "5.3 rondas"
-5. Intentar subir otra el mismo día → Debe dar error
-6. **Ir a Rankings** → Tab "Reyes Musculares"
-7. Verificar que aparecen puntos en grupos musculares
-8. **Click en un grupo** → Ver ranking detallado
-9. **Click "Ver desglose"** → Ver ejercicios y puntos
-10. Completar 3 sesiones en 3 días diferentes
-11. Intentar subir una 4ta → Debe dar error
-12. Ir a Profile → Ejecutar verificación semanal manual
-13. Verificar badges en tabla de rankings
+2. Click "💪 Generar Workout"
+3. Verificar que ejercicios sean del grupo focal de la semana
+4. Click "▶️ Comenzar Workout"
+5. Verificar countdown de 8 segundos
+6. En timer: marcar algunos ejercicios, pausar/reanudar
+7. Click "⏹️ Finalizar Workout"
+8. Ingresar rondas completadas (ej: 3)
+9. Capturar foto con cámara:
+   - Dar permisos de cámara
+   - Cambiar entre front/rear
+   - Capturar imagen
+   - Verificar preview
+10. Click "✅ Registrar Sesión"
+11. Verificar en Dashboard:
+   - Aparece sesión nueva
+   - Puntos por músculo se actualizaron
+   - Stats globales correctas
+
+### Flujo Completo de Prueba: Sistema de Warnings
+1. Subir sesión → Verificar que aparece en dashboard
+2. Intentar subir otra el mismo día → Debe dar error
+3. Subir en 3 días diferentes de la semana
+4. Intentar subir una 4ta → Debe dar error
+5. Ir a Profile → Ejecutar verificación semanal manual
+6. Verificar amonestaciones en consola y en UI
+7. Hacer ejercicio de recuperación (si hay warnings)
+8. Ver leaderboard → Verificar orden correcto
+
+### Flujo Completo de Prueba: Muscle Kings
+1. Completar workouts con diferentes usuarios
+2. Verificar que los puntos se acumulen correctamente
+3. Ir a Leaderboard
+4. Verificar que aparezcan los "Reyes de Músculo"
+5. Verificar que los badges estén junto al nombre correcto
+6. Completar workout que supere al líder actual
+7. Refrescar leaderboard → Verificar cambio de rey
 
 ### Casos Edge
 - ¿Qué pasa si localStorage está corrupto?
-- ¿Qué pasa si no hay workout generado y subes sesión?
-- ¿Qué pasa si regeneras workout varias veces?
-- ¿Qué pasa si hay ejercicios duplicados (mismo ID)?
-- ¿Qué pasa con ejercicio parcial en posición 0?
-- ¿Qué pasa si completas 0 rondas?
+- ¿Qué pasa si no hay sesiones?
+- ¿Qué pasa si es semana 53 del año?
+- ¿Qué pasa si ejecutas verificación múltiples veces?
+- ¿Qué pasa si cierras la cámara sin capturar?
+- ¿Qué pasa si niegas permisos de cámara?
+- ¿Qué pasa si localStorage está lleno (>5MB)?
+- ¿Qué pasa si refrescas durante un workout activo?
 
 ---
 
@@ -478,8 +603,11 @@ removeWarning()
 ### Documentación Oficial
 - [Redux Toolkit](https://redux-toolkit.js.org/)
 - [React Docs](https://react.dev/)
+- [React Router v6](https://reactrouter.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Vite](https://vitejs.dev/)
+- [MDN: MediaDevices API](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices)
+- [MDN: Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 
 ### Patrones Usados
 - Normalized State Shape (byId + allIds)
@@ -487,7 +615,9 @@ removeWarning()
 - Selector Pattern para leer estado
 - Thunk Pattern para async/validaciones
 - **Thunks para lógica de negocio** (NO middlewares)
-- Memoization con Reselect (para rankings complejos)
+- Component Composition (ejercicios, workouts)
+- Controlled Components (forms, camera)
+- Client-side Routing (React Router)
 
 ---
 
@@ -495,7 +625,7 @@ removeWarning()
 
 ### Contexto que Siempre Debes Dar
 ```
-Proyecto: FitTracker (React + Redux + Workouts + Rankings)
+Proyecto: FitTracker (React + Redux + React Router)
 Archivo: [ruta del archivo]
 Problema: [descripción clara]
 Comportamiento esperado: [qué debería pasar]
@@ -503,9 +633,10 @@ Comportamiento actual: [qué está pasando]
 ```
 
 ### Preguntas Efectivas
-✅ "En workoutsSlice.js, ¿cómo puedo añadir filtro por dificultad en rankings?"
-✅ "Quiero mostrar gráfica de evolución de rondas por semana, ¿dónde va esa lógica?"
-✅ "¿Cómo puedo exportar los rankings a PDF?"
+✅ "En workoutsSlice.js, ¿cómo puedo añadir un selector para obtener workouts de la semana actual?"
+✅ "Quiero añadir un botón para pausar el timer en WorkoutTimerPage, ¿dónde debería ir esa lógica?"
+✅ "¿Cómo puedo exportar el historial de workouts a PDF?"
+✅ "La compresión de imágenes no funciona en iOS, ¿cómo puedo debuggear esto?"
 ❌ "No funciona" (muy vago)
 ❌ "Arregla mi código" (sin contexto)
 
@@ -515,6 +646,7 @@ Por favor modifica [archivo] para [objetivo]:
 - Mantener [restricción 1]
 - Considerar [edge case]
 - Usar [patrón/tecnología existente]
+- Mobile-first approach
 ```
 
 ---
@@ -522,75 +654,60 @@ Por favor modifica [archivo] para [objetivo]:
 ## 📌 Notas Adicionales
 
 - **Propósito educativo**: Este proyecto está diseñado para aprender, NO para producción
-- **Prioridad**: Claridad sobre optimización
+- **Prioridad**: Claridad sobre optimización, pero considerar performance en mobile
 - **Testing**: Manual por ahora, sin tests automatizados
 - **Backend**: Pendiente - Por ahora todo en frontend
 - **Verificación semanal**: Manual mediante thunk (futuro: cron job en backend)
-- **Rankings**: Calculados en tiempo real (futuro: pre-calcular y cachear)
-- **Imágenes**: Data URLs SVG inline (no servicios externos)
+- **Navegación**: Client-side routing con React Router v6
+- **Media**: Cámara usa navigator.mediaDevices (requiere HTTPS en producción)
+- **Imágenes**: Compresión automática a <150KB para no llenar localStorage
 
 ---
 
-## 📄 Changelog
+## 📄 Changelog Reciente
 
-### v1.2.0 (2025-01-17) - Sistema de Workouts y Rankings
-- ✅ Añadida base de datos de 32 ejercicios clasificados
-- ✅ Generación automática de workouts AMRAP semanales
-- ✅ Sistema de registro mejorado (rondas + ejercicio parcial)
-- ✅ Rankings por grupo muscular (11 categorías)
-- ✅ Sistema de badges (5 tipos de logros)
-- ✅ Balance mensual muscular con visualización
-- ✅ Estadísticas de workouts completados
-- ✅ Tab "Rankings" reemplaza "Clasificación"
-- ✅ Arreglado IDs duplicados en exercises.js (ex024)
-- ✅ Cambiado placeholder images a Data URLs SVG
+### 2025-10-26 - v2.0.0 🎉
+- ✅ **MAJOR:** Sistema completo de workouts AMRAP
+- ✅ **NEW:** Base de datos de 32 ejercicios con niveles y grupos musculares
+- ✅ **NEW:** Sistema de ciclos de 4 semanas (Lower → Core → Upper Push → Upper Pull)
+- ✅ **NEW:** Generador de workouts basado en semana actual
+- ✅ **NEW:** Timer pantalla completa con sticky header y navegación
+- ✅ **NEW:** Pre-countdown de 8 segundos antes de iniciar
+- ✅ **NEW:** Pantalla post-workout con stats detalladas
+- ✅ **NEW:** Sistema de puntos por grupo muscular con multiplicadores de dificultad
+- ✅ **NEW:** "Muscle Kings" - rankings por cada grupo muscular (9 categorías)
+- ✅ **NEW:** Badges visuales en leaderboard (🦵 💪 ❤️ etc.)
+- ✅ **NEW:** React Router v6 para navegación entre páginas
+- ✅ **NEW:** CameraCapture component para móviles
+- ✅ **NEW:** Compresión inteligente de imágenes (50-150KB)
+- ✅ **NEW:** Switch entre cámara frontal/trasera
+- ✅ **IMPROVED:** SessionUpload deprecado → ahora WorkoutCompletePage
+- ✅ **IMPROVED:** Leaderboard muestra "Reyes de Músculo" por categoría
+- ✅ **IMPROVED:** workoutsSlice para gestionar workouts generados
+- ✅ **IMPROVED:** playersSlice ahora incluye `musclePoints` object
+- ✅ **IMPROVED:** sessionsSlice guarda `workoutId`, `rounds`, `musclePointsEarned`
 
-### v1.1.0 (2025-01-14) - Sistema de Verificación
-- ✅ Eliminado `warningMiddleware.js`
-- ✅ Creado `checkWeeklyCompliance.js` thunk
-- ✅ Actualizado `Profile.jsx` con botón de verificación
+**Razón del cambio:** Transformar la app de un simple tracker a una experiencia completa de workout con timer, ejercicios estructurados, y sistema de gamificación por grupos musculares. La captura de cámara mejora UX en mobile sin necesidad de backend para upload de fotos.
+
+### 2025-10-14 - v1.1.0
+- ✅ **CAMBIO IMPORTANTE:** Eliminado `warningMiddleware.js`
+- ✅ Creado `checkWeeklyCompliance.js` thunk para verificación semanal
+- ✅ Actualizado `Profile.jsx` con botón de verificación mejorado
 - ✅ Simplificado `store.js` (sin middleware custom)
+- ✅ Documentada estrategia de migración a backend + cron job
 
-### v1.0.0 (2025-01-10) - Versión Inicial
-- ✅ Sistema base de sesiones y jugadores
-- ✅ Validaciones de 3 días por semana
-- ✅ Sistema de amonestaciones
-- ✅ Leaderboard general
-- ✅ Ejercicios de recuperación
+**Razón del cambio:** Los middlewares no son apropiados para lógica de negocio que requiere trigger manual. Los thunks son más explícitos y fáciles de debuggear.
 
 ---
 
-## 🚀 Próximas Mejoras Planificadas
+## 📄 Última Actualización
 
-### Corto Plazo
-- [ ] Gráficas de evolución de rondas (Recharts)
-- [ ] Exportar rankings a PDF
-- [ ] Historial de "Reyes" por mes
-- [ ] Comparativa entre jugadores en mismo workout
-- [ ] Dark mode
-
-### Medio Plazo
-- [ ] Upload real de imágenes (Cloudinary/AWS S3)
-- [ ] Sistema de notificaciones (toast)
-- [ ] Predicción de rondas basada en historial
-- [ ] Filtros avanzados en rankings
-- [ ] Achievements adicionales
-
-### Largo Plazo (Requiere Backend)
-- [ ] Backend con Node.js + Express
-- [ ] Base de datos (PostgreSQL/MongoDB)
-- [ ] Autenticación real (JWT)
-- [ ] **Cron jobs para verificaciones automáticas** ⭐
-- [ ] API REST/GraphQL
-- [ ] Notificaciones push
-- [ ] Sistema de roles (admin/user)
-- [ ] Emails automáticos
-- [ ] Pre-cálculo de rankings (performance)
-
----
-
-**Creado con ❤️ para aprender React y Redux**
-
-**Última Actualización:** 2025-01-17  
-**Versión:** 1.2.0  
+**Fecha:** 2025-10-26
 **Estado:** ✅ Funcional - En desarrollo activo
+**Versión:** 2.0.0
+**Última mejora:** Sistema completo AMRAP con workouts, timer, camera capture y muscle rankings
+
+---
+
+**Creado con ❤️ para aprender React, Redux y React Router**
+**Now with 💪 AMRAP workouts and 📸 mobile camera!**
