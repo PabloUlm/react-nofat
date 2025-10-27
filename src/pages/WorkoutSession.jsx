@@ -18,7 +18,7 @@ function WorkoutSession() {
 
     // Tipo de sesión
     const [isRecovery] = useState(false); // Por ahora false, luego lo haremos dinámico
-    const duration = isRecovery ? 20 : 1; // minutos
+    const duration = isRecovery ? 20 : 10; // minutos
 
     // Si no hay workout generado, volver al dashboard
     if (!workout && !isRecovery) {

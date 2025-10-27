@@ -41,48 +41,54 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* HEADER STICKY con Timer */}
+            {/* HEADER STICKY con Timer - Optimizado móvil */}
             <div className="sticky top-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg">
                 {/* Barra de progreso */}
-                <div className="h-2 bg-indigo-800">
+                <div className="h-1 md:h-2 bg-indigo-800">
                     <div
                         className="h-full bg-green-400 transition-all duration-1000"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
 
-                {/* Timer y controles */}
-                <div className="px-6 py-4">
-                    <div className="max-w-7xl mx-auto flex items-center justify-between">
+                {/* Timer y controles - Stack en móvil */}
+                <div className="px-3 py-3 md:px-6 md:py-4">
+                    <div className="max-w-7xl mx-auto">
                         {/* Timer */}
-                        <div className="flex-1">
-                            <p className="text-indigo-200 text-sm mb-1">Tiempo restante</p>
-                            <h1 className={`text-7xl font-bold tabular-nums ${getTimerColor()}`}>
-                                {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
-                            </h1>
-                        </div>
+                        <div className="flex items-center justify-between md:block">
+                            <div className="flex-1 md:mb-3">
+                                <p className="text-indigo-200 text-xs md:text-sm mb-0.5 md:mb-1">Tiempo restante</p>
+                                <h1 className={`text-4xl md:text-7xl font-bold tabular-nums ${getTimerColor()}`}>
+                                    {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+                                </h1>
+                            </div>
 
-                        {/* Controles */}
-                        <div className="flex gap-3">
-                            {/* Botón Pausa/Reanudar */}
-                            <button
-                                onClick={() => setIsPaused(!isPaused)}
-                                className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition"
-                            >
-                                {isPaused ? '▶️ Reanudar' : '⏸️ Pausa'}
-                            </button>
+                            {/* Controles - Compactos en móvil */}
+                            <div className="flex gap-2 md:gap-3">
+                                {/* Botón Pausa/Reanudar - Solo icono en móvil */}
+                                <button
+                                    onClick={() => setIsPaused(!isPaused)}
+                                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition text-sm md:text-base"
+                                    title={isPaused ? 'Reanudar' : 'Pausar'}
+                                >
+                                    <span className="md:hidden">{isPaused ? '▶️' : '⏸️'}</span>
+                                    <span className="hidden md:inline">{isPaused ? '▶️ Reanudar' : '⏸️ Pausa'}</span>
+                                </button>
 
-                            {/* Botón Cancelar */}
-                            <button
-                                onClick={() => {
-                                    if (confirm('¿Seguro que quieres cancelar el workout?')) {
-                                        onCancel();
-                                    }
-                                }}
-                                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition"
-                            >
-                                ✕ Cancelar
-                            </button>
+                                {/* Botón Cancelar - Solo icono en móvil */}
+                                <button
+                                    onClick={() => {
+                                        if (confirm('¿Seguro que quieres cancelar el workout?')) {
+                                            onCancel();
+                                        }
+                                    }}
+                                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 md:px-6 md:py-3 rounded-lg font-semibold transition text-sm md:text-base"
+                                    title="Cancelar"
+                                >
+                                    <span className="md:hidden">✕</span>
+                                    <span className="hidden md:inline">✕ Cancelar</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -90,76 +96,81 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
 
             {/* Mensaje de pausa */}
             {isPaused && (
-                <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4">
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 p-3 md:p-4">
                     <div className="max-w-7xl mx-auto">
-                        <p className="text-yellow-800 font-semibold">
+                        <p className="text-yellow-800 font-semibold text-sm md:text-base">
                             ⏸️ Workout en pausa - Click "Reanudar" para continuar
                         </p>
                     </div>
                 </div>
             )}
 
-            {/* LISTA DE EJERCICIOS (Scrollable) */}
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {/* LISTA DE EJERCICIOS - Optimizada móvil */}
+            <div className="max-w-7xl mx-auto px-3 md:px-6 py-4 md:py-8">
+                {/* Header lista - Más compacto en móvil */}
+                <div className="mb-4 md:mb-6">
+                    <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-1 md:mb-2">
                         📋 Ejercicios del Circuito
                     </h2>
-                    <p className="text-gray-600">
+                    <p className="text-sm md:text-base text-gray-600 hidden md:block">
                         Completa tantas rondas como puedas. ¡Vamos! 💪
                     </p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                     {exercises.map((exercise, index) => (
                         <div
                             key={exercise.id}
-                            className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition"
+                            className="bg-white rounded-lg md:rounded-xl shadow-md p-3 md:p-6 hover:shadow-lg transition"
                         >
-                            <div className="flex items-center gap-6">
-                                {/* Número del ejercicio */}
-                                <div className="flex-shrink-0 w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">
-                    {index + 1}
-                  </span>
+                            <div className="flex items-center gap-3 md:gap-6">
+                                {/* Número del ejercicio - Más pequeño en móvil */}
+                                <div className="flex-shrink-0 w-10 h-10 md:w-16 md:h-16 bg-indigo-600 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-lg md:text-2xl font-bold">
+                                        {index + 1}
+                                    </span>
                                 </div>
 
                                 {/* Info del ejercicio */}
-                                <div className="flex-1">
-                                    <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-2xl md:text-2xl font-bold text-gray-900 mb-0.5 md:mb-1 truncate">
                                         {exercise.name}
                                     </h3>
-                                    <p className="text-xl text-indigo-600 font-semibold">
-                                        {exercise.defaultReps} {exercise.repsType === 'time' ? 'segundos' : 'repeticiones'}
+                                    <p className="text-2xl md:text-xl text-indigo-600 font-semibold">
+                                        {exercise.defaultReps} {exercise.repsType === 'time' ? 'seg' : 'reps'}
                                     </p>
                                 </div>
 
-                                {/* Badge de dificultad */}
-                                <div className="flex-shrink-0">
-                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                      exercise.difficulty === 'principiante' ? 'bg-green-100 text-green-800' :
-                          exercise.difficulty === 'intermedio' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                  }`}>
-                    {exercise.difficulty}
-                  </span>
+                                {/* Badge de dificultad - OCULTO EN MÓVIL */}
+                                <div className="hidden md:block flex-shrink-0">
+                                    <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                                        exercise.difficulty === 'principiante' ? 'bg-green-100 text-green-800' :
+                                            exercise.difficulty === 'intermedio' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-red-100 text-red-800'
+                                    }`}>
+                                        {exercise.difficulty}
+                                    </span>
                                 </div>
                             </div>
 
-                            {/* Descripción (opcional, puede ocupar mucho) */}
-                            <p className="text-gray-600 text-sm mt-3 ml-22">
+                            {/* Descripción - OCULTA EN MÓVIL */}
+                            <p className="hidden md:block text-gray-600 text-sm mt-3 ml-22">
                                 {exercise.description}
                             </p>
                         </div>
                     ))}
                 </div>
 
-                {/* Nota al final */}
-                <div className="mt-8 bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
-                    <p className="text-blue-800">
-                        <strong>💡 Recuerda:</strong> Completa los ejercicios en orden.
-                        Al terminar el último, vuelve al primero para empezar una nueva ronda.
-                        ¡No pares hasta que suene el timer!
+                {/* Nota al final - Más compacta en móvil */}
+                <div className="mt-6 md:mt-8 bg-blue-50 border-l-4 border-blue-500 p-3 md:p-6 rounded">
+                    <p className="text-blue-800 text-xs md:text-base">
+                        <strong className="hidden md:inline">💡 Recuerda:</strong>
+                        <span className="md:hidden">💡</span>
+                        {' '}Completa los ejercicios en orden.
+                        <span className="hidden md:inline">
+                            {' '}Al terminar el último, vuelve al primero para empezar una nueva ronda.
+                            ¡No pares hasta que suene el timer!
+                        </span>
                     </p>
                 </div>
             </div>

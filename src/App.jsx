@@ -57,7 +57,7 @@ function MainLayout({ onLogout, currentUser }) {
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             <div className="flex-shrink-0 flex items-center">
-                                <h1 className="text-2xl font-bold text-indigo-600">💪 FitTracker</h1>
+                                <h1 className="text-2xl font-bold text-indigo-600">NO FAT</h1>
                             </div>
                             {/* Desktop Navigation - Visible desde 768px (md:) */}
                             <div className="hidden md:ml-6 md:flex md:space-x-8">

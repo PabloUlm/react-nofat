@@ -20,7 +20,7 @@ function Login() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
             <div className="bg-white p-8 rounded-lg shadow-2xl w-96">
                 <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
-                    💪 FitTracker
+                    NO FAT
                 </h1>
                 <p className="text-center text-gray-600 mb-6">
                     Inicia sesión para continuar
