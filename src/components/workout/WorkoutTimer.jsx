@@ -1,8 +1,10 @@
 // src/components/workout/WorkoutTimer.jsx
 import { useState, useEffect, useRef } from 'react';
 
+const TESTING_MODE = true; // Cambiar a false para modo normal
+
 function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
-    const totalSeconds = duration * 60; // Convertir minutos a segundos
+    const totalSeconds = TESTING_MODE ? duration : duration * 60;
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
     const wakeLockRef = useRef(null);
