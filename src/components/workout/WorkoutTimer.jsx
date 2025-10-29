@@ -1,65 +1,114 @@
 // src/components/workout/WorkoutTimer.jsx
 import { useState, useEffect, useRef } from 'react';
 
-const TESTING_MODE = true; // Cambiar a false para modo normal
-
 function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
-    const totalSeconds = TESTING_MODE ? duration : duration * 60;
+    // 🔧 TESTING MODE: Usar segundos directamente en lugar de minutos
+    const totalSeconds = duration * 60; // SIN multiplicar por 60 = usar segundos directamente
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
     const wakeLockRef = useRef(null);
+    const noSleepVideoRef = useRef(null);
 
-    // Wake Lock: Mantener pantalla encendida
+    // Wake Lock: Mantener pantalla encendida con estrategias efectivas
     useEffect(() => {
         let wakeLock = null;
 
         const requestWakeLock = async () => {
             try {
-                // Verificar si Wake Lock API está disponible
+                // Estrategia 1: Wake Lock API (Chrome Android, Safari 16.4+)
                 if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    wakeLockRef.current = wakeLock;
-                    console.log('✅ Wake Lock activado - Pantalla permanecerá encendida');
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLockRef.current = wakeLock;
+                        console.log('✅ Wake Lock API activado');
 
-                    // Event listener para cuando se pierde el wake lock (ej: cambiar de tab)
-                    wakeLock.addEventListener('release', () => {
-                        console.log('⚠️ Wake Lock liberado');
-                    });
+                        wakeLock.addEventListener('release', () => {
+                            console.log('⚠️ Wake Lock liberado');
+                        });
+                    } catch (err) {
+                        console.warn('⚠️ Wake Lock falló:', err.message);
+                    }
                 } else {
-                    console.warn('⚠️ Wake Lock API no disponible en este navegador');
+                    console.warn('⚠️ Wake Lock API no disponible');
                 }
+
+                // Estrategia 2: NoSleep.js technique - Video invisible (fallback para iOS)
+                console.log('🎬 Activando video invisible (NoSleep)...');
+                const video = document.createElement('video');
+                video.setAttribute('playsinline', '');
+                video.setAttribute('muted', '');
+                video.setAttribute('loop', '');
+                video.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;z-index:-9999;left:-10px;top:-10px;';
+
+                // Video WebM corto que se repite (técnica NoSleep.js)
+                video.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAAs1tZGF0AAACrgYF//+q3EXpvebZSLeWLNgg2SPu73gyNjQgLSBjb3JlIDE1MiByMjg1NCBlOWE1OTAzIC0gSC4yNjQvTVBFRy00IEFWQyBjb2RlYyAtIENvcHlsZWZ0IDIwMDMtMjAxNyAtIGh0dHA6Ly93d3cudmlkZW9sYW4ub3JnL3gyNjQuaHRtbCAtIG9wdGlvbnM6IGNhYmFjPTEgcmVmPTMgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDExMyBtZT1oZXggc3VibWU9NyBwc3k9MSBwc3lfcmQ9MS4wMDowLjAwIG1peGVkX3JlZj0xIG1lX3JhbmdlPTE2IGNocm9tYV9tZT0xIHRyZWxsaXM9MSA4eDhkY3Q9MSBjcW09MCBkZWFkem9uZT0yMSwxMSBmYXN0X3Bza2lwPTEgY2hyb21hX3FwX29mZnNldD0tMiB0aHJlYWRzPTEgbG9va2FoZWFkX3RocmVhZHM9MSBzbGljZWRfdGhyZWFkcz0wIG5yPTAgZGVjaW1hdGU9MSBpbnRlcmxhY2VkPTAgYmx1cmF5X2NvbXBhdD0wIGNvbnN0cmFpbmVkX2ludHJhPTAgYmZyYW1lcz0zIGJfcHlyYW1pZD0yIGJfYWRhcHQ9MSBiX2JpYXM9MCBkaXJlY3Q9MSB3ZWlnaHRiPTEgb3Blbl9nb3A9MCB3ZWlnaHRwPTIga2V5aW50PTI1MCBrZXlpbnRfbWluPTI1IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NDAgcmM9Y3JmIG1idHJlZT0xIGNyZj0yMy4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAD2WIhAAV/78VAAAAwGWIhABV/78VAAAAwGWIhAAV/78VAAAAwGWIhABV/78VAAAAwGWIhAAV/78VAAAAwGWIhABV/78VAAAAwGWIhAAV/78VAAAAwGWIhABV/78VAAAAwGWIhAAV/78VAAAAwGWIhABV/78VAAAAwGWIhAAV/78VAAAAwGWIhABV/78VAAAAwGWIhABV/78VAAAAwGWIhABV/78VAAAAwGWIhABV/78VAAAA';
+
+                noSleepVideoRef.current = video;
+                document.body.appendChild(video);
+
+                // Intentar reproducir (CRÍTICO para iOS)
+                try {
+                    await video.play();
+                    console.log('✅ Video invisible reproduciendo');
+                } catch (playErr) {
+                    console.warn('⚠️ Video play falló (normal si no hay interacción):', playErr.message);
+                }
+
+                console.log('✅ Estrategias anti-sleep activadas');
+
             } catch (err) {
-                console.error('❌ Error al activar Wake Lock:', err);
+                console.error('❌ Error al activar mantener pantalla:', err);
             }
         };
 
-        // Activar Wake Lock al montar el componente
+        // Activar al montar
         requestWakeLock();
 
         // Limpiar al desmontar
         return () => {
+            // Limpiar Wake Lock API
             if (wakeLockRef.current) {
                 wakeLockRef.current.release()
                     .then(() => {
-                        console.log('🔓 Wake Lock liberado al salir');
+                        console.log('🔓 Wake Lock liberado');
                         wakeLockRef.current = null;
-                    });
+                    })
+                    .catch(() => {});
+            }
+
+            // Limpiar video invisible
+            if (noSleepVideoRef.current) {
+                noSleepVideoRef.current.pause();
+                noSleepVideoRef.current.remove();
+                noSleepVideoRef.current = null;
+                console.log('🛑 Video invisible detenido');
             }
         };
     }, []);
 
-    // Re-activar Wake Lock cuando la página vuelve a ser visible
+    // Re-activar cuando la página vuelve a ser visible
     useEffect(() => {
         const handleVisibilityChange = async () => {
-            if (document.visibilityState === 'visible' && wakeLockRef.current === null) {
-                try {
-                    if ('wakeLock' in navigator) {
+            if (document.visibilityState === 'visible') {
+                // Reintentar Wake Lock API
+                if (!wakeLockRef.current && 'wakeLock' in navigator) {
+                    try {
                         const wakeLock = await navigator.wakeLock.request('screen');
                         wakeLockRef.current = wakeLock;
                         console.log('✅ Wake Lock re-activado');
+                    } catch (err) {
+                        console.warn('⚠️ Error al re-activar Wake Lock:', err.message);
                     }
-                } catch (err) {
-                    console.error('❌ Error al re-activar Wake Lock:', err);
+                }
+
+                // Reintentar video invisible
+                if (noSleepVideoRef.current && noSleepVideoRef.current.paused) {
+                    try {
+                        await noSleepVideoRef.current.play();
+                        console.log('✅ Video invisible re-activado');
+                    } catch (err) {
+                        console.warn('⚠️ Error al re-activar video:', err.message);
+                    }
                 }
             }
         };
@@ -73,21 +122,17 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
 
     // Timer principal
     useEffect(() => {
-        // Si está pausado, no hacer nada
         if (isPaused) return;
 
-        // Si llegó a 0, terminar
         if (secondsRemaining === 0) {
             onFinish();
             return;
         }
 
-        // Timer cada segundo
         const timer = setInterval(() => {
             setSecondsRemaining(s => s - 1);
         }, 1000);
 
-        // Cleanup
         return () => clearInterval(timer);
     }, [secondsRemaining, isPaused, onFinish]);
 
@@ -95,14 +140,14 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
     const minutes = Math.floor(secondsRemaining / 60);
     const seconds = secondsRemaining % 60;
 
-    // Calcular progreso (para barra)
+    // Calcular progreso
     const progress = ((totalSeconds - secondsRemaining) / totalSeconds) * 100;
 
-    // Determinar color según tiempo restante
+    // Color según tiempo restante
     const getTimerColor = () => {
-        if (secondsRemaining > 120) return 'text-white'; // > 2min: blanco
-        if (secondsRemaining > 60) return 'text-yellow-300'; // > 1min: amarillo
-        return 'text-red-400'; // < 1min: rojo
+        if (secondsRemaining > 120) return 'text-white';
+        if (secondsRemaining > 60) return 'text-yellow-300';
+        return 'text-red-400';
     };
 
     return (
