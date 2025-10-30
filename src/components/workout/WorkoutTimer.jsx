@@ -1,93 +1,72 @@
 // src/components/workout/WorkoutTimer.jsx
 import { useState, useEffect, useRef } from 'react';
 
-function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
+function WorkoutTimer({ duration, exercises, onFinish, onCancel, audioRef }) {
     const totalSeconds = duration * 60; // Convertir minutos a segundos
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
     const wakeLockRef = useRef(null);
-    const audioRef = useRef(null);
 
-    // Wake Lock: Mantener pantalla encendida con audio silencioso
+    // Wake Lock y Audio: Mantener pantalla encendida
     useEffect(() => {
         let wakeLock = null;
 
         const requestWakeLock = async () => {
             try {
-                // Estrategia 1: Wake Lock API (Chrome Android, Safari 16.4+)
+                // Estrategia 1: Wake Lock API (Chrome Android, Safari iOS 16.4+)
                 if ('wakeLock' in navigator) {
                     try {
                         wakeLock = await navigator.wakeLock.request('screen');
                         wakeLockRef.current = wakeLock;
-                        console.log('✅ Wake Lock API activado');
+                        console.log('✅ [WorkoutTimer] Wake Lock API activado');
 
                         wakeLock.addEventListener('release', () => {
-                            console.log('⚠️ Wake Lock liberado');
+                            console.log('⚠️ [WorkoutTimer] Wake Lock liberado');
                         });
                     } catch (err) {
-                        console.warn('⚠️ Wake Lock falló:', err.message);
+                        console.warn('⚠️ [WorkoutTimer] Wake Lock falló:', err.message);
                     }
                 } else {
-                    console.warn('⚠️ Wake Lock API no disponible');
+                    console.warn('⚠️ [WorkoutTimer] Wake Lock API no disponible');
                 }
 
-                // Estrategia 2: Audio silencioso en loop (efectivo para iOS Chrome)
-                console.log('🔊 Activando audio silencioso...');
-                const audio = new Audio();
-
-                // Audio silencioso en formato data URI (1 segundo de silencio MP3)
-                // Este MP3 está ultra-comprimido (~200 bytes)
-                audio.src = 'data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
-
-                audio.loop = true; // Loop infinito
-                audio.volume = 0.01; // Volumen muy bajo pero no cero (iOS necesita volumen > 0)
-                audio.preload = 'auto';
-
-                audioRef.current = audio;
-
-                // Intentar reproducir
-                try {
-                    await audio.play();
-                    console.log('✅ Audio silencioso reproduciendo');
-                } catch (playErr) {
-                    console.warn('⚠️ Audio play falló (se activará con interacción del usuario):', playErr.message);
-                    // En iOS, el audio puede necesitar interacción del usuario
-                    // Se activará cuando el usuario haga click en pausa/reanudar
+                // Estrategia 2: Verificar audio recibido de PreCountdown
+                if (audioRef && !audioRef.paused) {
+                    console.log('✅ [WorkoutTimer] Audio silencioso activo (desde PreCountdown)');
+                } else if (audioRef && audioRef.paused) {
+                    // Intentar reactivar si se pausó
+                    try {
+                        await audioRef.play();
+                        console.log('✅ [WorkoutTimer] Audio silencioso reactivado');
+                    } catch (err) {
+                        console.warn('⚠️ [WorkoutTimer] No se pudo reactivar audio:', err.message);
+                    }
+                } else {
+                    console.warn('⚠️ [WorkoutTimer] No se recibió audio desde PreCountdown');
                 }
-
-                console.log('✅ Estrategias anti-sleep activadas');
 
             } catch (err) {
-                console.error('❌ Error al activar mantener pantalla:', err);
+                console.error('❌ [WorkoutTimer] Error en inicialización:', err);
             }
         };
 
-        // Activar al montar el componente
         requestWakeLock();
 
         // Limpiar al desmontar
         return () => {
-            // Limpiar Wake Lock API
             if (wakeLockRef.current) {
                 wakeLockRef.current.release()
                     .then(() => {
-                        console.log('🔓 Wake Lock liberado al salir');
+                        console.log('🔓 [WorkoutTimer] Wake Lock liberado');
                         wakeLockRef.current = null;
                     })
                     .catch(() => {});
             }
-
-            // Limpiar audio
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current.src = '';
-                audioRef.current = null;
-                console.log('🔇 Audio silencioso detenido');
-            }
+            // NO detenemos el audio aquí, se limpia en WorkoutSession
         };
-    }, []);
+    }, [audioRef]);
 
-    // Re-activar Wake Lock y audio cuando la página vuelve a ser visible
+    // Re-activar cuando la página vuelve a ser visible
     useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.visibilityState === 'visible') {
@@ -96,19 +75,19 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
                     try {
                         const wakeLock = await navigator.wakeLock.request('screen');
                         wakeLockRef.current = wakeLock;
-                        console.log('✅ Wake Lock re-activado');
+                        console.log('✅ [WorkoutTimer] Wake Lock re-activado');
                     } catch (err) {
-                        console.warn('⚠️ Error al re-activar Wake Lock:', err.message);
+                        console.warn('⚠️ [WorkoutTimer] Error al re-activar Wake Lock:', err.message);
                     }
                 }
 
                 // Re-activar audio si se pausó
-                if (audioRef.current && audioRef.current.paused) {
+                if (audioRef && audioRef.paused) {
                     try {
-                        await audioRef.current.play();
-                        console.log('✅ Audio silencioso re-activado');
+                        await audioRef.play();
+                        console.log('✅ [WorkoutTimer] Audio re-activado');
                     } catch (err) {
-                        console.warn('⚠️ Error al re-activar audio:', err.message);
+                        console.warn('⚠️ [WorkoutTimer] Error al re-activar audio:', err.message);
                     }
                 }
             }
@@ -119,17 +98,16 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, []);
+    }, [audioRef]);
 
     // Manejar pausa/reanudar: re-activar audio si es necesario
     useEffect(() => {
-        if (!isPaused && audioRef.current && audioRef.current.paused) {
-            // Cuando se reanuda, asegurar que el audio sigue reproduciéndose
-            audioRef.current.play().catch(err => {
-                console.warn('⚠️ No se pudo reanudar audio:', err.message);
+        if (!isPaused && audioRef && audioRef.paused) {
+            audioRef.play().catch(err => {
+                console.warn('⚠️ [WorkoutTimer] No se pudo reanudar audio:', err.message);
             });
         }
-    }, [isPaused]);
+    }, [isPaused, audioRef]);
 
     // Timer principal
     useEffect(() => {

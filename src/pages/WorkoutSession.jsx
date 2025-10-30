@@ -1,5 +1,5 @@
 // src/pages/WorkoutSession.jsx
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectCurrentWeekWorkout } from '../redux/slices/workoutsSlice';
@@ -19,6 +19,31 @@ function WorkoutSession() {
     // Tipo de sesión
     const [isRecovery] = useState(false); // Por ahora false, luego lo haremos dinámico
     const duration = isRecovery ? 20 : 10; // minutos
+
+    // Ref para almacenar el audio silencioso (compartido entre componentes)
+    const audioRef = useRef(null);
+
+    // Cleanup: Detener audio al desmontar o volver al dashboard
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                console.log('🔇 [WorkoutSession] Deteniendo audio silencioso al salir');
+                audioRef.current.pause();
+                audioRef.current.src = '';
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    // Handler para recibir el audio desde PreCountdown
+    const handleAudioReady = (audio) => {
+        audioRef.current = audio;
+        if (audio) {
+            console.log('✅ [WorkoutSession] Audio recibido desde PreCountdown');
+        } else {
+            console.warn('⚠️ [WorkoutSession] Audio no se pudo inicializar en PreCountdown');
+        }
+    };
 
     // Si no hay workout generado, volver al dashboard
     if (!workout && !isRecovery) {
@@ -44,25 +69,27 @@ function WorkoutSession() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* FASE 1: Pre-Countdown (8 segundos) */}
+            {/* FASE 1: Pre-Countdown (8 segundos) - Aquí se inicia el audio */}
             {phase === 'pre-countdown' && (
                 <PreCountdown
                     onFinish={() => setPhase('workout')}
                     onCancel={() => navigate('/dashboard')}
+                    onAudioReady={handleAudioReady}
                 />
             )}
 
-            {/* FASE 2: Workout Timer (10 o 20 minutos) */}
+            {/* FASE 2: Workout Timer (10 o 20 minutos) - Recibe el audio */}
             {phase === 'workout' && (
                 <WorkoutTimer
                     duration={duration}
                     exercises={workout?.exercises || []}
                     onFinish={() => setPhase('finished')}
                     onCancel={() => navigate('/dashboard')}
+                    audioRef={audioRef.current}
                 />
             )}
 
-            {/* FASE 3: Formulario de Registro */}
+            {/* FASE 3: Formulario de Registro - Audio se limpia automáticamente */}
             {phase === 'finished' && (
                 <PostWorkoutForm
                     workout={workout}
