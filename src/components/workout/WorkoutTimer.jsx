@@ -1,113 +1,127 @@
 // src/components/workout/WorkoutTimer.jsx
 import { useState, useEffect, useRef } from 'react';
 
-function WorkoutTimer({ duration, exercises, onFinish, onCancel, audioRef }) {
+function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
     const totalSeconds = duration * 60; // Convertir minutos a segundos
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
-    const wakeLockRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const oscillatorRef = useRef(null);
+    const gainNodeRef = useRef(null);
 
-    // Wake Lock y Audio: Mantener pantalla encendida
+    // AudioContext + Oscillator: Mantener pantalla activa con audio silencioso
     useEffect(() => {
-        let wakeLock = null;
-
-        const requestWakeLock = async () => {
+        const startAudioKeepAlive = () => {
             try {
-                // Estrategia 1: Wake Lock API (Chrome Android, Safari iOS 16.4+)
-                if ('wakeLock' in navigator) {
-                    try {
-                        wakeLock = await navigator.wakeLock.request('screen');
-                        wakeLockRef.current = wakeLock;
-                        console.log('✅ [WorkoutTimer] Wake Lock API activado');
-
-                        wakeLock.addEventListener('release', () => {
-                            console.log('⚠️ [WorkoutTimer] Wake Lock liberado');
-                        });
-                    } catch (err) {
-                        console.warn('⚠️ [WorkoutTimer] Wake Lock falló:', err.message);
-                    }
-                } else {
-                    console.warn('⚠️ [WorkoutTimer] Wake Lock API no disponible');
+                // Crear contexto de audio
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) {
+                    console.warn('⚠️ Web Audio API no disponible');
+                    return;
                 }
 
-                // Estrategia 2: Verificar audio recibido de PreCountdown
-                if (audioRef && !audioRef.paused) {
-                    console.log('✅ [WorkoutTimer] Audio silencioso activo (desde PreCountdown)');
-                } else if (audioRef && audioRef.paused) {
-                    // Intentar reactivar si se pausó
-                    try {
-                        await audioRef.play();
-                        console.log('✅ [WorkoutTimer] Audio silencioso reactivado');
-                    } catch (err) {
-                        console.warn('⚠️ [WorkoutTimer] No se pudo reactivar audio:', err.message);
-                    }
-                } else {
-                    console.warn('⚠️ [WorkoutTimer] No se recibió audio desde PreCountdown');
-                }
+                const audioContext = new AudioContext();
+                audioContextRef.current = audioContext;
 
+                // Crear oscilador (genera tono)
+                const oscillator = audioContext.createOscillator();
+                oscillatorRef.current = oscillator;
+
+                // Crear nodo de ganancia (volumen)
+                const gainNode = audioContext.createGain();
+                gainNodeRef.current = gainNode;
+
+                // Configurar oscilador
+                oscillator.type = 'sine'; // Onda sinusoidal (más suave)
+                oscillator.frequency.value = 20000; // 20kHz (inaudible para humanos)
+
+                // Volumen prácticamente silencioso pero suficiente para mantener activo
+                gainNode.gain.value = 0.001; // Casi mudo
+
+                // Conectar: Oscillator -> GainNode -> Destination (altavoces)
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Iniciar oscilador
+                oscillator.start(0);
+
+                console.log('✅ AudioContext activado - Pantalla permanecerá encendida');
+                console.log('🔊 Frecuencia:', oscillator.frequency.value, 'Hz (inaudible)');
+                console.log('🔇 Volumen:', gainNode.gain.value, '(prácticamente silencioso)');
             } catch (err) {
-                console.error('❌ [WorkoutTimer] Error en inicialización:', err);
+                console.error('❌ Error al activar AudioContext:', err);
             }
         };
 
-        requestWakeLock();
+        // Iniciar audio keep-alive
+        startAudioKeepAlive();
 
-        // Limpiar al desmontar
+        // Cleanup: Detener audio al desmontar
         return () => {
-            if (wakeLockRef.current) {
-                wakeLockRef.current.release()
-                    .then(() => {
-                        console.log('🔓 [WorkoutTimer] Wake Lock liberado');
-                        wakeLockRef.current = null;
-                    })
-                    .catch(() => {});
-            }
-            // NO detenemos el audio aquí, se limpia en WorkoutSession
-        };
-    }, [audioRef]);
-
-    // Re-activar cuando la página vuelve a ser visible
-    useEffect(() => {
-        const handleVisibilityChange = async () => {
-            if (document.visibilityState === 'visible') {
-                // Re-activar Wake Lock API
-                if (!wakeLockRef.current && 'wakeLock' in navigator) {
-                    try {
-                        const wakeLock = await navigator.wakeLock.request('screen');
-                        wakeLockRef.current = wakeLock;
-                        console.log('✅ [WorkoutTimer] Wake Lock re-activado');
-                    } catch (err) {
-                        console.warn('⚠️ [WorkoutTimer] Error al re-activar Wake Lock:', err.message);
-                    }
+            if (oscillatorRef.current) {
+                try {
+                    oscillatorRef.current.stop();
+                    oscillatorRef.current.disconnect();
+                    console.log('🔇 Oscillator detenido');
+                } catch (err) {
+                    // Ignorar errores al detener (puede ya estar detenido)
                 }
+            }
 
-                // Re-activar audio si se pausó
-                if (audioRef && audioRef.paused) {
-                    try {
-                        await audioRef.play();
-                        console.log('✅ [WorkoutTimer] Audio re-activado');
-                    } catch (err) {
-                        console.warn('⚠️ [WorkoutTimer] Error al re-activar audio:', err.message);
-                    }
+            if (gainNodeRef.current) {
+                try {
+                    gainNodeRef.current.disconnect();
+                } catch (err) {
+                    // Ignorar
+                }
+            }
+
+            if (audioContextRef.current) {
+                try {
+                    audioContextRef.current.close();
+                    console.log('🔓 AudioContext cerrado');
+                } catch (err) {
+                    // Ignorar
+                }
+            }
+        };
+    }, []);
+
+    // Reanudar AudioContext si se suspende (iOS)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && audioContextRef.current) {
+                // En iOS, el AudioContext se suspende automáticamente
+                if (audioContextRef.current.state === 'suspended') {
+                    audioContextRef.current.resume()
+                        .then(() => {
+                            console.log('✅ AudioContext reanudado');
+                        })
+                        .catch(err => {
+                            console.error('❌ Error al reanudar AudioContext:', err);
+                        });
                 }
             }
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
+        // También intentar reanudar cuando hay interacción del usuario
+        const handleUserInteraction = () => {
+            if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+                audioContextRef.current.resume();
+            }
+        };
+
+        document.addEventListener('touchstart', handleUserInteraction);
+        document.addEventListener('click', handleUserInteraction);
+
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('touchstart', handleUserInteraction);
+            document.removeEventListener('click', handleUserInteraction);
         };
-    }, [audioRef]);
-
-    // Manejar pausa/reanudar: re-activar audio si es necesario
-    useEffect(() => {
-        if (!isPaused && audioRef && audioRef.paused) {
-            audioRef.play().catch(err => {
-                console.warn('⚠️ [WorkoutTimer] No se pudo reanudar audio:', err.message);
-            });
-        }
-    }, [isPaused, audioRef]);
+    }, []);
 
     // Timer principal
     useEffect(() => {
