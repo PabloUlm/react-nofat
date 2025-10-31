@@ -5,125 +5,128 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
     const totalSeconds = duration * 60; // Convertir minutos a segundos
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
-    const audioContextRef = useRef(null);
-    const oscillatorRef = useRef(null);
-    const gainNodeRef = useRef(null);
+    const [wakeLockError, setWakeLockError] = useState(false);
+    const wakeLockRef = useRef(null);
 
-    // AudioContext + Oscillator: Mantener pantalla activa con audio silencioso
+    // 🔒 PWA Wake Lock: Mantener pantalla encendida durante el workout
     useEffect(() => {
-        const startAudioKeepAlive = () => {
+        const requestWakeLock = async () => {
             try {
-                // Crear contexto de audio
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) {
-                    console.warn('⚠️ Web Audio API no disponible');
-                    return;
+                if ('wakeLock' in navigator) {
+                    const wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLockRef.current = wakeLock;
+                    setWakeLockError(false);
+
+                    console.log('✅ [PWA] Wake Lock activado - Pantalla permanecerá encendida');
+
+                    // Listener para detectar cuando se libera el Wake Lock
+                    wakeLock.addEventListener('release', () => {
+                        console.log('⚠️ [PWA] Wake Lock liberado');
+                        wakeLockRef.current = null;
+                    });
+                } else {
+                    console.warn('⚠️ Wake Lock API no disponible');
+                    setWakeLockError(true);
                 }
-
-                const audioContext = new AudioContext();
-                audioContextRef.current = audioContext;
-
-                // Crear oscilador (genera tono)
-                const oscillator = audioContext.createOscillator();
-                oscillatorRef.current = oscillator;
-
-                // Crear nodo de ganancia (volumen)
-                const gainNode = audioContext.createGain();
-                gainNodeRef.current = gainNode;
-
-                // Configurar oscilador
-                oscillator.type = 'sine'; // Onda sinusoidal (más suave)
-                oscillator.frequency.value = 20000; // 20kHz (inaudible para humanos)
-
-                // Volumen prácticamente silencioso pero suficiente para mantener activo
-                gainNode.gain.value = 0.001; // Casi mudo
-
-                // Conectar: Oscillator -> GainNode -> Destination (altavoces)
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-
-                // Iniciar oscilador
-                oscillator.start(0);
-
-                console.log('✅ AudioContext activado - Pantalla permanecerá encendida');
-                console.log('🔊 Frecuencia:', oscillator.frequency.value, 'Hz (inaudible)');
-                console.log('🔇 Volumen:', gainNode.gain.value, '(prácticamente silencioso)');
             } catch (err) {
-                console.error('❌ Error al activar AudioContext:', err);
+                console.error('❌ Error al activar Wake Lock:', err.name, err.message);
+                setWakeLockError(true);
             }
         };
 
-        // Iniciar audio keep-alive
-        startAudioKeepAlive();
+        // Activar inmediatamente al montar
+        requestWakeLock();
 
-        // Cleanup: Detener audio al desmontar
+        // Cleanup: liberar Wake Lock al desmontar el componente
         return () => {
-            if (oscillatorRef.current) {
-                try {
-                    oscillatorRef.current.stop();
-                    oscillatorRef.current.disconnect();
-                    console.log('🔇 Oscillator detenido');
-                } catch (err) {
-                    // Ignorar errores al detener (puede ya estar detenido)
-                }
-            }
-
-            if (gainNodeRef.current) {
-                try {
-                    gainNodeRef.current.disconnect();
-                } catch (err) {
-                    // Ignorar
-                }
-            }
-
-            if (audioContextRef.current) {
-                try {
-                    audioContextRef.current.close();
-                    console.log('🔓 AudioContext cerrado');
-                } catch (err) {
-                    // Ignorar
-                }
+            if (wakeLockRef.current) {
+                wakeLockRef.current.release()
+                    .then(() => {
+                        console.log('🔓 [PWA] Wake Lock liberado al salir del workout');
+                        wakeLockRef.current = null;
+                    })
+                    .catch(err => {
+                        console.error('Error al liberar Wake Lock:', err);
+                    });
             }
         };
     }, []);
 
-    // Reanudar AudioContext si se suspende (iOS)
+    // 🔄 Re-activar Wake Lock cuando la app vuelve a estar visible
+    // Esto es crítico en PWA cuando el usuario minimiza y vuelve a la app
     useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && audioContextRef.current) {
-                // En iOS, el AudioContext se suspende automáticamente
-                if (audioContextRef.current.state === 'suspended') {
-                    audioContextRef.current.resume()
-                        .then(() => {
-                            console.log('✅ AudioContext reanudado');
-                        })
-                        .catch(err => {
-                            console.error('❌ Error al reanudar AudioContext:', err);
+        const handleVisibilityChange = async () => {
+            // Solo reactivar si:
+            // 1. La app está visible
+            // 2. El workout NO está pausado
+            // 3. No hay Wake Lock activo
+            if (
+                document.visibilityState === 'visible' &&
+                !isPaused &&
+                !wakeLockRef.current
+            ) {
+                try {
+                    if ('wakeLock' in navigator) {
+                        const wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLockRef.current = wakeLock;
+                        setWakeLockError(false);
+                        console.log('✅ [PWA] Wake Lock re-activado al volver a la app');
+
+                        wakeLock.addEventListener('release', () => {
+                            console.log('⚠️ [PWA] Wake Lock liberado nuevamente');
+                            wakeLockRef.current = null;
                         });
+                    }
+                } catch (err) {
+                    console.error('❌ Error al re-activar Wake Lock:', err);
+                    setWakeLockError(true);
                 }
             }
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        // También intentar reanudar cuando hay interacción del usuario
-        const handleUserInteraction = () => {
-            if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
-                audioContextRef.current.resume();
-            }
-        };
-
-        document.addEventListener('touchstart', handleUserInteraction);
-        document.addEventListener('click', handleUserInteraction);
-
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            document.removeEventListener('touchstart', handleUserInteraction);
-            document.removeEventListener('click', handleUserInteraction);
         };
-    }, []);
+    }, [isPaused]);
 
-    // Timer principal
+    // ⏸️ Gestión de Wake Lock durante pausa
+    // Liberar durante pausa para ahorrar batería, reactivar al continuar
+    useEffect(() => {
+        if (isPaused && wakeLockRef.current) {
+            // Liberar Wake Lock durante la pausa
+            wakeLockRef.current.release()
+                .then(() => {
+                    console.log('⏸️ [PWA] Wake Lock liberado durante pausa (ahorro de batería)');
+                    wakeLockRef.current = null;
+                })
+                .catch(err => {
+                    console.error('Error al liberar Wake Lock en pausa:', err);
+                });
+        } else if (!isPaused && !wakeLockRef.current && document.visibilityState === 'visible') {
+            // Reactivar Wake Lock al despausar
+            (async () => {
+                try {
+                    if ('wakeLock' in navigator) {
+                        const wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLockRef.current = wakeLock;
+                        setWakeLockError(false);
+                        console.log('▶️ [PWA] Wake Lock reactivado al continuar');
+
+                        wakeLock.addEventListener('release', () => {
+                            wakeLockRef.current = null;
+                        });
+                    }
+                } catch (err) {
+                    console.error('Error al reactivar Wake Lock:', err);
+                    setWakeLockError(true);
+                }
+            })();
+        }
+    }, [isPaused]);
+
+    // ⏱️ Timer principal
     useEffect(() => {
         // Si está pausado, no hacer nada
         if (isPaused) return;
@@ -210,6 +213,15 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Indicador de Wake Lock (solo visible si hay error) */}
+                {wakeLockError && (
+                    <div className="bg-yellow-500/90 px-3 py-1">
+                        <p className="text-xs text-yellow-900 text-center">
+                            ⚠️ Mantén la pantalla encendida manualmente
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Mensaje de pausa */}
@@ -251,10 +263,10 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
 
                                 {/* Info del ejercicio */}
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-2xl md:text-2xl font-bold text-gray-900 mb-0.5 md:mb-1 truncate">
+                                    <h3 className="text-base md:text-2xl font-bold text-gray-900 mb-0.5 md:mb-1 truncate">
                                         {exercise.name}
                                     </h3>
-                                    <p className="text-2xl md:text-xl text-indigo-600 font-semibold">
+                                    <p className="text-xl md:text-xl text-indigo-600 font-semibold">
                                         {exercise.defaultReps} {exercise.repsType === 'time' ? 'seg' : 'reps'}
                                     </p>
                                 </div>

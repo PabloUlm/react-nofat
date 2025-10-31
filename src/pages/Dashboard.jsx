@@ -1,4 +1,5 @@
 // src/pages/Dashboard.jsx
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectCurrentUser } from '../redux/slices/authSlice';
@@ -9,7 +10,9 @@ import WeeklyProgress from '../components/session/WeeklyProgress';
 import WarningBadge from '../components/player/WarningBadge';
 import WeeklyWorkout from '../components/workout/WeeklyWorkout';
 import MonthlyBalance from '../components/workout/MonthlyBalance';
+import InstallRequiredModal from '../components/workout/InstallRequiredModal';
 import { getWeekNumber } from '../utils/dateHelpers';
+import { isPWA } from '../utils/pwaHelpers';
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -19,11 +22,23 @@ function Dashboard() {
     const currentWeekWorkout = useSelector(selectCurrentWeekWorkout);
     const currentWeek = getWeekNumber(new Date());
 
+    // Estado para modal de instalación requerida (OPCIÓN B)
+    const [showInstallModal, setShowInstallModal] = useState(false);
+
     const handleStartWorkout = () => {
+        // OPCIÓN B - ACCESO LIMITADO: Verificar si está instalada como PWA
+        if (!isPWA()) {
+            console.log('❌ No es PWA - Bloqueando workout');
+            setShowInstallModal(true);
+            return;
+        }
+
         if (!currentWeekWorkout) {
             alert('⚠️ Necesitas generar un workout semanal primero');
             return;
         }
+
+        console.log('✅ Es PWA - Iniciando workout');
         navigate('/workout-session');
     };
 
@@ -144,6 +159,11 @@ function Dashboard() {
                     </div>
                 )}
             </div>
+
+            {/* Modal de Instalación Requerida (OPCIÓN B) */}
+            {showInstallModal && (
+                <InstallRequiredModal onClose={() => setShowInstallModal(false)} />
+            )}
         </div>
     );
 }
