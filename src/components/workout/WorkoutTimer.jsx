@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
-    const totalSeconds = duration * 60;
+    const totalSeconds = duration;// * 60;
     const [secondsRemaining, setSecondsRemaining] = useState(totalSeconds);
     const [isPaused, setIsPaused] = useState(false);
 
