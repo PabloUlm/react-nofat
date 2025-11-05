@@ -24,6 +24,7 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
     const pausedTimeRef = useRef(0);
     const lastTickRef = useRef(Date.now());
     const timerIntervalRef = useRef(null);
+    const hasFinishedRef = useRef(false); // 🚨 NUEVO: Evitar llamar onFinish múltiples veces
 
     // 🐛 Logger
     const addDebugLog = (message, type = 'info') => {
@@ -31,63 +32,6 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
         const log = { time: timestamp, message, type };
         setDebugLogs(prev => [...prev, log].slice(-15));
         console.log(`[${timestamp}] ${message}`);
-    };
-
-    // 🔔 NUEVO: Reproducir alarma cuando termina el timer
-    const playAlarm = () => {
-        try {
-            addDebugLog('🔔 Reproduciendo alarma...', 'info');
-
-            // Crear contexto de audio si no existe
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            const alarmContext = new AudioContext();
-
-            // Crear una secuencia de 3 beeps
-            const beepTimes = [0, 0.3, 0.6]; // 3 beeps con 300ms entre cada uno
-
-            beepTimes.forEach((time, index) => {
-                const oscillator = alarmContext.createOscillator();
-                const gainNode = alarmContext.createGain();
-
-                oscillator.connect(gainNode);
-                gainNode.connect(alarmContext.destination);
-
-                // Frecuencia del beep (800Hz - audible y no muy molesto)
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-
-                // Volumen medio
-                gainNode.gain.value = 0.3;
-
-                // Fade out suave al final de cada beep
-                const startTime = alarmContext.currentTime + time;
-                const duration = 0.2; // 200ms por beep
-
-                gainNode.gain.setValueAtTime(0.3, startTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-
-                oscillator.start(startTime);
-                oscillator.stop(startTime + duration);
-
-                // Si es el último beep, cerrar el contexto después
-                if (index === beepTimes.length - 1) {
-                    setTimeout(() => {
-                        alarmContext.close();
-                    }, (time + duration) * 1000 + 100);
-                }
-            });
-
-            // También vibrar si está disponible
-            if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200, 100, 200]); // 3 vibraciones
-            }
-
-            addDebugLog('✅ Alarma reproducida', 'success');
-
-        } catch (err) {
-            addDebugLog(`❌ Error reproduciendo alarma: ${err.name}`, 'error');
-            console.error('Error en alarma:', err);
-        }
     };
 
     // 🎵 Audio API silencioso
@@ -211,16 +155,25 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
             lastTickRef.current = now;
 
             if (remaining <= 0) {
-                addDebugLog('⏰ Timer completado', 'success');
-                clearInterval(timerIntervalRef.current);
+                // 🚨 CRÍTICO: Solo ejecutar UNA vez
+                if (hasFinishedRef.current) {
+                    return; // Ya se ejecutó, no hacer nada
+                }
 
-                // 🔔 REPRODUCIR ALARMA
-                playAlarm();
+                hasFinishedRef.current = true;
 
-                // Esperar un poco antes de llamar onFinish para que se escuche la alarma
-                setTimeout(() => {
-                    onFinish();
-                }, 1000);
+                addDebugLog('⏰ Timer completado - llamando onFinish', 'success');
+
+                // 🛑 DETENER el interval INMEDIATAMENTE
+                if (timerIntervalRef.current) {
+                    clearInterval(timerIntervalRef.current);
+                    timerIntervalRef.current = null;
+                }
+
+                setSecondsRemaining(0);
+
+                // Llamar a onFinish SOLO UNA VEZ
+                onFinish();
             } else {
                 setSecondsRemaining(remaining);
             }
@@ -349,6 +302,9 @@ function WorkoutTimer({ duration, exercises, onFinish, onCancel }) {
         } else {
             addDebugLog('▶️ USUARIO REANUDÓ', 'success');
             setLastAction('Reanudado manualmente');
+
+            // Resetear flag de finished (por si reinician)
+            hasFinishedRef.current = false;
 
             // Reiniciar timer
             lastTickRef.current = Date.now();
